@@ -1,0 +1,1 @@
+Lifted directly from [`finality_aleph::justification`](https://github.com/Cardinal-Cryptography/aleph-node/blob/main/finality-aleph/)

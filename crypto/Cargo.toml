@@ -1,0 +1,26 @@
+[package]
+name = "crypto"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
+
+ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
+aead = { version = "0.4.3", default-features = false, optional = true }
+typenum = { version = "1.14.0", default-features = false, optional = true }
+aead-io = { version = "0.1.2", optional = true }
+
+
+[dev-dependencies]
+rand = "0.8.5"
+hex = "0.4"
+
+[features]
+default = [ "full_crypto" ]
+std = [ "aead/std" ]
+full_crypto = [
+    "sp-core/full_crypto",
+    "sp-application-crypto/full_crypto",
+]
