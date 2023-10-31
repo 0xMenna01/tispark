@@ -1,16 +1,19 @@
 use aleph_bft_crypto::NodeIndex;
+use scale::{Decode, Encode};
 #[cfg(feature = "std")]
 use scale_info::{prelude::fmt::Debug, TypeInfo};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, HashOutput, Header as HeaderT},
 };
+pub use state::GetResponse;
 
+/// Remember to make all these not public and only expose what is needed
 mod consensus;
 pub mod finality;
 mod state;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
+#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
 pub struct AccountId([u8; 32]);
 
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
@@ -60,6 +63,7 @@ pub type FinalityVersion = u32;
 
 pub type SessionIndex = u32;
 
+#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
 pub struct VersionChange {
     pub incoming: FinalityVersion,
     pub session: SessionIndex,
