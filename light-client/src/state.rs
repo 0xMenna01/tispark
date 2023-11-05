@@ -1,9 +1,15 @@
-use crate::{BlockNumber, GetSingleState, StateProofError};
+use crate::{BlockNumber, GetSingleState, StateProofError, StateRootHash};
 use primitives::{commit_reveal::SecretKey, phala_ismp::GetResponseProof};
 use scale::{Decode, Encode};
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct GetResponse(pub BlockNumber, pub GetResponseProof);
+
+impl GetResponse {
+    pub fn state_root(&self) -> StateRootHash {
+        self.1.state_root().state_root
+    }
+}
 
 impl GetSingleState for GetResponse {
     fn verify_key_uniquness(&self) -> bool {
@@ -74,7 +80,7 @@ impl GetCommitmentResponseProof {
         let data = self.response().verify_state()?;
         let commitments: Vec<ResultCommitment> =
             Decode::decode(&mut &data[..]).map_err(|_| StateProofError::DecodeError)?;
-        
+
         if let Some(commitment) = commitments.get(self.id as usize) {
             Ok(commitment.to_owned())
         } else {

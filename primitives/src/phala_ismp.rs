@@ -55,6 +55,10 @@ impl GetResponseProof {
         &self.keys
     }
 
+    pub fn state_root(&self) -> &StateCommitment {
+        &self.root
+    }
+
     /// Lifted directly from [`ismp_primitives::state_machine::verify_state_proof`](https://github.com/polytope-labs/ismp-substrate/blob/ed1127dd02548ee45d30ddc0e82e4adbd9834bb8/pallet-ismp/primitives/state-machine/src/lib.rs)
     pub fn verify_state_proof(&self) -> Result<BTreeMap<Vec<u8>, Option<Vec<u8>>>, Error> {
         let state_proof: SubstrateStateProof = codec::Decode::decode(&mut &*self.proof.proof)
