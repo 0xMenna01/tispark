@@ -6,13 +6,13 @@ use sp_runtime::{
     generic,
     traits::{BlakeTwo256, HashOutput, Header as HeaderT},
 };
-pub use state::GetResponse;
 pub use state::GetCommitmentResponseProof;
+pub use state::GetResponse;
 
-/// Remember to make all these not public and only expose what is needed
-mod consensus;
+// Remember to make all these not public and only expose what is needed
+pub mod consensus;
 pub mod finality;
-mod state;
+pub mod state;
 
 #[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
 pub struct AccountId([u8; 32]);
@@ -152,7 +152,7 @@ mod test {
                 )
                 .unwrap();
                 let parent_hash = Hash::from_slice(&parent_hash);
-                
+
                 let digest = AlephConsensusLogBuilder::logs("cbd9386500000000", "8233d4f1b48f23886f4d1c9417e4a37e386809a133b5271ac514d68cb4cdde6d33beefc18799f2f9ce7fb4e1d0c777dd8159a1b115d182d0dcac4d6069a2a78f").unwrap().build();
 
                 let consensus_state = consensus_client.build_consenus_state(
