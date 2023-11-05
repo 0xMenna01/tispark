@@ -4,6 +4,8 @@ use crate::{
 };
 use aleph_bft_crypto::NodeIndex;
 use hex::FromHex;
+use scale::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{testing::DigestItem, traits::Header as HeaderT, ConsensusEngineId, Digest};
 
 /// The `ConsensusEngineId` of AuRa.
@@ -11,6 +13,12 @@ pub const AURA_ENGINE_ID: ConsensusEngineId = *b"aura";
 
 /// The `ConsensusEngineId` of Aleph.
 pub const ALEPH_ENGINE_ID: ConsensusEngineId = *b"FRNK";
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug, TypeInfo)]
+pub struct AlephLogs {
+    pub aura_pre_runtime: String,
+    pub seal: String,
+}
 
 #[allow(dead_code)]
 pub struct AlephConsensusLogBuilder {

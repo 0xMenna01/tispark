@@ -152,7 +152,7 @@ mod test {
                 )
                 .unwrap();
                 let parent_hash = Hash::from_slice(&parent_hash);
-
+                
                 let digest = AlephConsensusLogBuilder::logs("cbd9386500000000", "8233d4f1b48f23886f4d1c9417e4a37e386809a133b5271ac514d68cb4cdde6d33beefc18799f2f9ce7fb4e1d0c777dd8159a1b115d182d0dcac4d6069a2a78f").unwrap().build();
 
                 let consensus_state = consensus_client.build_consenus_state(
