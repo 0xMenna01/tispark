@@ -7,6 +7,7 @@ use sp_runtime::{
     traits::{BlakeTwo256, HashOutput, Header as HeaderT},
 };
 pub use state::GetResponse;
+pub use state::GetCommitmentResponseProof;
 
 /// Remember to make all these not public and only expose what is needed
 mod consensus;
