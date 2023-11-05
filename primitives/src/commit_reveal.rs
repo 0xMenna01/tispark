@@ -57,7 +57,8 @@ impl DecryptedData {
 
     pub fn decrypt(&self) -> Result<Reveal, CommitRevealError> {
         let mut decrypted = self.encrypted.clone();
-        aead::decrypt(self.iv.as_slice(), self.key.as_slice(), decrypted.as_mut())
+        let iv = aead::generate_iv(self.iv.as_slice());
+        aead::decrypt(&iv, self.key.as_slice(), decrypted.as_mut())
             .map_err(|_| CommitRevealError::DecryptionRejected)?;
 
         Ok(decrypted)
