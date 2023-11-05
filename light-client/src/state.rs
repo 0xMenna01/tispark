@@ -48,6 +48,20 @@ pub struct ResultCommitment {
     proof: SecretKey,
 }
 
+impl ResultCommitment {
+    pub fn nonce(&self) -> &[u8] {
+        &self.commitment.1
+    }
+
+    pub fn value(&self) -> &[u8] {
+        &self.commitment.0
+    }
+
+    pub fn key(&self) -> &[u8] {
+        &self.proof
+    }
+}
+
 pub type CommitId = u32;
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
