@@ -153,6 +153,29 @@ impl<PlainText: Encode, CommitMetadata>
     }
 }
 
+impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
+    pub fn commit_already_encoded(
+        self,
+    ) -> Result<Commit<EncryptedData, CommitMetadata>, CommitRevealError> {
+        // 1. Already encoded
+        let mut data = self.state.data;
+
+        // 2. Set up iv and secret
+        let nonce = self.state.setup_material.nonce;
+        let iv = aead::generate_iv(&nonce);
+        let secret = self.state.setup_material.secret.get();
+
+        // 3. Encrypt
+        aead::encrypt(&iv, &secret, &mut data).map_err(|_| CommitRevealError::EncryptionError)?;
+
+        Ok(Commit {
+            metadata: self.state.setup_material.metadata,
+            data,
+            nonce,
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
 

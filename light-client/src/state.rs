@@ -74,7 +74,7 @@ impl GetCommitmentResponseProof {
         let data = self.response().verify_state()?;
         let commitments: Vec<ResultCommitment> =
             Decode::decode(&mut &data[..]).map_err(|_| StateProofError::DecodeError)?;
-
+        
         if let Some(commitment) = commitments.get(self.id as usize) {
             Ok(commitment.to_owned())
         } else {
