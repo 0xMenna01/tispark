@@ -128,11 +128,8 @@ mod test {
             authority_keys.push(AuthorityId::try_from(pub_key.as_slice()).unwrap())
         });
 
-        let consensus_client = AlephConsensusClient::<14>::consensus(
-            authority_keys.clone(),
-            emergency_finalizer.clone(),
-        )
-        .unwrap();
+        let consensus_client =
+            AlephConsensusClient::new(authority_keys.clone(), emergency_finalizer.clone());
 
         match justification {
             justification::AlephJustification::CommitteeMultisignature(signatures) => {

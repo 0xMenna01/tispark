@@ -52,7 +52,7 @@ impl AlephConsensusLogBuilder {
 }
 
 /// AlephBFT consensus client implementation
-pub struct AlephConsensusClient<const NUM_AUTHORITIES: usize> {
+pub struct AlephConsensusClient {
     authorities: Vec<AuthorityId>,
     // Not yet supported for state verify
     emergency_finalizer: AuthorityId,
@@ -60,7 +60,7 @@ pub struct AlephConsensusClient<const NUM_AUTHORITIES: usize> {
 
 impl Proof for SignatureSet<AlephSignature> {}
 
-impl<const NUM_AUTHORITIES: usize> ConsensusClient for AlephConsensusClient<NUM_AUTHORITIES> {
+impl ConsensusClient for AlephConsensusClient {
     type ConsensusState = BlockHash;
     type ConsensusProof = SignatureSet<AlephSignature>;
 
@@ -88,18 +88,11 @@ impl<const NUM_AUTHORITIES: usize> ConsensusClient for AlephConsensusClient<NUM_
 }
 
 #[allow(dead_code)]
-impl<const NUM_AUTHORITIES: usize> AlephConsensusClient<NUM_AUTHORITIES> {
-    pub fn consensus(
-        authorities: Vec<AuthorityId>,
-        emergency_finalizer: AuthorityId,
-    ) -> Result<Self, ConsensusError> {
-        if authorities.len() == NUM_AUTHORITIES {
-            Ok(Self {
-                authorities,
-                emergency_finalizer,
-            })
-        } else {
-            Err(ConsensusError::InvalidAuthorities)
+impl AlephConsensusClient {
+    pub fn new(authorities: Vec<AuthorityId>, emergency_finalizer: AuthorityId) -> Self {
+        Self {
+            authorities,
+            emergency_finalizer,
         }
     }
 
