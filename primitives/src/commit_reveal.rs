@@ -70,7 +70,7 @@ pub struct CommitRevealManager<S> {
     state: S,
 }
 
-struct UnSet;
+pub struct UnSet;
 
 /// Setup material for initializing the aes-gcm key and iv to encrypt the data.
 /// Ensure that the encoded metadata is at least 96 bit in size.
