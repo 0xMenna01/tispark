@@ -1,13 +1,9 @@
-use alloc::vec::Vec;
+use super::{AlephJustification, Version, LOG_TARGET};
+use crate::finality::crypto::{AlephSignature, AlephSignatureSet, SignatureV1};
+use alloc::{vec, vec::Vec};
 use codec::{Decode, DecodeAll, Encode, Error as CodecError, Input as CodecInput};
 use log::warn;
-use std::{
-    fmt::{Display, Error as FmtError, Formatter},
-    mem::size_of,
-};
-
-use super::{AlephJustification, Version, LOG_TARGET};
-use crate::finality::crypto::{AlephSignature, SignatureSet, SignatureV1};
+use scale_info::prelude::mem::size_of;
 
 type ByteCount = u16;
 
@@ -15,16 +11,16 @@ type ByteCount = u16;
 /// Used an old format of signature which unnecessarily contained the signer ID.
 #[derive(Clone, Encode, Decode, Debug, PartialEq, Eq)]
 struct AlephJustificationV1 {
-    pub signature: SignatureSet<SignatureV1>,
+    pub signature: AlephSignatureSet<SignatureV1>,
 }
 
 impl From<AlephJustificationV1> for AlephJustification {
     fn from(justification: AlephJustificationV1) -> AlephJustification {
         let size = justification.signature.size();
-        let just_drop_id: SignatureSet<AlephSignature> = justification
+        let just_drop_id: AlephSignatureSet<AlephSignature> = justification
             .signature
             .into_iter()
-            .fold(SignatureSet::with_size(size), |sig_set, (id, sgn)| {
+            .fold(AlephSignatureSet::with_size(size), |sig_set, (id, sgn)| {
                 sig_set.add_signature(&sgn.into(), id)
             });
         AlephJustification::CommitteeMultisignature(just_drop_id)
@@ -35,7 +31,7 @@ impl From<AlephJustificationV1> for AlephJustification {
 /// Used an old format of signature from before the compatibility changes.
 #[derive(Clone, Encode, Decode, Debug, PartialEq, Eq)]
 struct AlephJustificationV2 {
-    pub signature: SignatureSet<AlephSignature>,
+    pub signature: AlephSignatureSet<AlephSignature>,
 }
 
 impl From<AlephJustificationV2> for AlephJustification {
@@ -131,22 +127,6 @@ pub enum Error {
     UnknownVersion(Version),
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        use Error::*;
-        match self {
-            BadFormat => write!(f, "malformed encoding"),
-            UnknownVersion(version) => {
-                write!(
-                    f,
-                    "justification encoded with unknown version {}",
-                    version.0
-                )
-            }
-        }
-    }
-}
-
 fn decode_pre_compatibility_justification(
     justification_raw: Vec<u8>,
 ) -> Result<AlephJustification, Error> {
@@ -204,7 +184,9 @@ mod test {
     use sp_core::Pair;
 
     use crate::finality::{
-        crypto::{AlephSignature, AuthorityPair, AuthoritySignature, SignatureSet, SignatureV1},
+        crypto::{
+            AlephSignature, AlephSignatureSet, AuthorityPair, AuthoritySignature, SignatureV1,
+        },
         justification::{AlephJustification, Version},
         types::NodeCount,
     };
@@ -216,7 +198,8 @@ mod test {
 
     #[test]
     fn correctly_decodes_v1() {
-        let mut signature_set: SignatureSet<SignatureV1> = SignatureSet::with_size(7.into());
+        let mut signature_set: AlephSignatureSet<SignatureV1> =
+            AlephSignatureSet::with_size(7.into());
         for i in 0..7 {
             let id = i.into();
             let signature_v1 = SignatureV1 {
@@ -239,7 +222,8 @@ mod test {
 
     #[test]
     fn correctly_decodes_v2() {
-        let mut signature_set: SignatureSet<AlephSignature> = SignatureSet::with_size(7.into());
+        let mut signature_set: AlephSignatureSet<AlephSignature> =
+            AlephSignatureSet::with_size(7.into());
         for i in 0..7 {
             let authority_signature: AuthoritySignature = AuthorityPair::generate()
                 .0
@@ -275,7 +259,7 @@ mod test {
             Ok(AlephJustification::EmergencySignature(_)) => {
                 panic!("decoded V1 as emergency signature")
             }
-            Err(e) => panic!("decoding V1 failed: {e}"),
+            Err(_e) => panic!(),
         }
     }
 

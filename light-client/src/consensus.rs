@@ -1,13 +1,16 @@
 use crate::{
-    finality::crypto::{verify, AlephSignature, AuthorityId, AuthoritySignature, SignatureSet},
+    finality::{
+        crypto::{verify, AlephSignature, AlephSignatureSet, AuthorityId, AuthoritySignature},
+        types::NodeIndex,
+    },
     BlockHash, BlockNumber, ConsensusClient, ConsensusError, Hash, Header, Proof, StateRootHash,
 };
-use aleph_bft_crypto::NodeIndex;
-use alloc::vec::Vec;
+
+use alloc::{string::String, vec::Vec};
 use codec::{Decode, Encode};
 use hex::FromHex;
 use scale_info::TypeInfo;
-use sp_runtime::{testing::DigestItem, traits::Header as HeaderT, ConsensusEngineId, Digest};
+use sp_runtime::{traits::Header as HeaderT, ConsensusEngineId, Digest, DigestItem};
 
 /// The `ConsensusEngineId` of AuRa.
 pub const AURA_ENGINE_ID: ConsensusEngineId = *b"aura";
@@ -59,11 +62,11 @@ pub struct AlephConsensusClient {
     emergency_finalizer: AuthorityId,
 }
 
-impl Proof for SignatureSet<AlephSignature> {}
+impl Proof for AlephSignatureSet<AlephSignature> {}
 
 impl ConsensusClient for AlephConsensusClient {
     type ConsensusState = BlockHash;
-    type ConsensusProof = SignatureSet<AlephSignature>;
+    type ConsensusProof = AlephSignatureSet<AlephSignature>;
 
     fn verify_consensus(
         &self,

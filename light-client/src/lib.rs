@@ -1,8 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
-use aleph_bft_crypto::NodeIndex;
+use alloc::vec::Vec;
 use codec::{Decode, Encode};
+use finality::types::NodeIndex;
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, HashOutput, Header as HeaderT},

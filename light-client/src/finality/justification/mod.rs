@@ -4,7 +4,7 @@ use codec::{Decode, Encode};
 pub use compatibility::{backwards_compatible_decode, versioned_encode, Error as DecodeError};
 use sp_runtime::Justification;
 
-use super::crypto::{AlephSignature, AuthoritySignature, SignatureSet};
+use super::crypto::{AlephSignature, AlephSignatureSet, AuthoritySignature};
 mod compatibility;
 
 #[derive(Encode, Eq, Decode, PartialEq, Debug, Copy, Clone)]
@@ -16,7 +16,7 @@ const LOG_TARGET: &str = "aleph-justification";
 /// sudo signature of a block for emergency finalization.
 #[derive(Clone, Encode, Decode, Debug, PartialEq, Eq)]
 pub enum AlephJustification {
-    CommitteeMultisignature(SignatureSet<AlephSignature>),
+    CommitteeMultisignature(AlephSignatureSet<AlephSignature>),
     EmergencySignature(AuthoritySignature),
 }
 
