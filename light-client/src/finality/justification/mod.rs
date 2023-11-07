@@ -1,7 +1,7 @@
 /// Lifted directly from [`finality_aleph::justification`](https://github.com/Cardinal-Cryptography/aleph-node/blob/main/finality-aleph/src/justification/mod.rs)
 use crate::consensus::ALEPH_ENGINE_ID;
+use codec::{Decode, Encode};
 pub use compatibility::{backwards_compatible_decode, versioned_encode, Error as DecodeError};
-use scale::{Decode, Encode};
 use sp_runtime::Justification;
 
 use super::crypto::{AlephSignature, AuthoritySignature, SignatureSet};

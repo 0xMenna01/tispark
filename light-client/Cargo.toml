@@ -6,34 +6,28 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ink = { version = "4", default-features = false }
-scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0", default-features = false }
+hex = { version = "0.4", default-features = false }
+log = { version = "0.4.17", default-features = false }
+derive_more = { version = "0.99", default-features = false }
 
-
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde-json-core = { version = "0.4.0" }
-hex = { version = "0.4" }
+aleph-bft-crypto = { version = "0.5", default-features = false }
+current-aleph-bft = { package = "aleph-bft", version = "0.20", default-features = false }
+legacy-aleph-bft = { package = "aleph-bft", version = "0.19", default-features = false }
+ismp = { git = "https://github.com/polytope-labs/ismp-rs", branch = "main", default-features = false }
 
 primitives = { path = "../primitives" }
-pink-extension-runtime = "0.4"
-aleph-bft-crypto = { version = "0.5" }
-current-aleph-bft = { package = "aleph-bft", version = "0.20" }
-legacy-aleph-bft = { package = "aleph-bft", version = "0.19" }
-ismp = { git = "https://github.com/polytope-labs/ismp-rs", branch = "main", default-features = false }
-log = "0.4.20"
-derive_more = { version = "0.99" }
 
 [features]
 default = ["std"]
 std = [
-    "ink/std",
-    "scale/std",
+    "log/std",
+    "codec/std",
     "scale-info/std",
-    "serde-json-core/std",
     "sp-core/std",
     "sp-runtime/std",
     "sp-application-crypto/std",

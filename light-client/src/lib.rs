@@ -1,7 +1,8 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
+
 use aleph_bft_crypto::NodeIndex;
-use scale::{Decode, Encode};
-#[cfg(feature = "std")]
-use scale_info::{prelude::fmt::Debug, TypeInfo};
+use codec::{Decode, Encode};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, HashOutput, Header as HeaderT},
@@ -14,7 +15,7 @@ pub mod consensus;
 pub mod finality;
 pub mod state;
 
-#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
+#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct AccountId([u8; 32]);
 
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
@@ -43,10 +44,7 @@ pub enum ConsensusError {
     InvalidAlephLogPreRuntime,
     InvalidAlephLogSeal,
 }
-pub trait Proof:
-    'static + Send + Sync + Sized + Clone + Eq + PartialEq + Debug + core::hash::Hash
-{
-}
+pub trait Proof: 'static + Send + Sync + Sized + Clone + Eq + PartialEq + core::hash::Hash {}
 
 pub trait ConsensusClient {
     type ConsensusState: HashOutput;
@@ -64,7 +62,7 @@ pub type FinalityVersion = u32;
 
 pub type SessionIndex = u32;
 
-#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash, TypeInfo)]
+#[derive(Encode, Decode, Debug, Copy, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct VersionChange {
     pub incoming: FinalityVersion,
     pub session: SessionIndex,
@@ -82,10 +80,10 @@ pub trait GetSingleState {
 
 mod test {
 
+    use codec::Encode;
     use hex::FromHex;
     use ismp::consensus::StateCommitment;
     use primitives::phala_ismp::{GetResponseProof, HashAlgorithm, Proof, SubstrateStateProof};
-    use scale::Encode;
 
     use crate::{
         consensus::{AlephConsensusClient, AlephConsensusLogBuilder},

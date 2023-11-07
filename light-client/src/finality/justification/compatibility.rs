@@ -1,5 +1,5 @@
+use codec::{Decode, DecodeAll, Encode, Error as CodecError, Input as CodecInput};
 use log::warn;
-use scale::{Decode, DecodeAll, Encode, Error as CodecError, Input as CodecInput};
 use std::{
     fmt::{Display, Error as FmtError, Formatter},
     mem::size_of,
@@ -199,10 +199,14 @@ pub fn versioned_encode(justification: AlephJustification) -> Vec<u8> {
 
 #[cfg(test)]
 mod test {
-    use scale::{Decode, Encode};
+    use codec::{Decode, Encode};
     use sp_core::Pair;
 
-    use crate::finality::{crypto::{SignatureSet, SignatureV1, AuthorityPair, AlephSignature, AuthoritySignature}, justification::{AlephJustification, Version}, types::NodeCount};
+    use crate::finality::{
+        crypto::{AlephSignature, AuthorityPair, AuthoritySignature, SignatureSet, SignatureV1},
+        justification::{AlephJustification, Version},
+        types::NodeCount,
+    };
 
     use super::{
         backwards_compatible_decode, AlephJustificationV1, AlephJustificationV2,

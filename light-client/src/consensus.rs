@@ -3,8 +3,8 @@ use crate::{
     BlockHash, BlockNumber, ConsensusClient, ConsensusError, Hash, Header, Proof, StateRootHash,
 };
 use aleph_bft_crypto::NodeIndex;
+use codec::{Decode, Encode};
 use hex::FromHex;
-use scale::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{testing::DigestItem, traits::Header as HeaderT, ConsensusEngineId, Digest};
 

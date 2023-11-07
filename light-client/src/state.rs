@@ -1,6 +1,6 @@
 use crate::{BlockNumber, GetSingleState, StateProofError, StateRootHash};
+use codec::{Decode, Encode};
 use primitives::{commit_reveal::SecretKey, phala_ismp::GetResponseProof};
-use scale::{Decode, Encode};
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct GetResponse(pub BlockNumber, pub GetResponseProof);

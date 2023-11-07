@@ -1,6 +1,6 @@
 use super::types::{NodeCount, NodeIndex};
 use aleph_bft_crypto::{PartialMultisignature, Signature};
-use scale::{Decode, Encode};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::RuntimeAppPublic;

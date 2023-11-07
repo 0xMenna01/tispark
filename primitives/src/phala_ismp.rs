@@ -1,6 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-extern crate alloc;
-
 use alloc::{collections::BTreeMap, format, vec::Vec};
 use codec::{Decode, Encode};
 use ismp::{consensus::StateCommitment, error::Error};

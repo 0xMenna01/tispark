@@ -1,11 +1,17 @@
 [workspace]
-resolver = "2"
+resolver = "1"
+
 members = [
     "crypto",
     "primitives",
     "light-client",
 ]
 
-
 [profile.release]
+# Substrate runtime requires unwinding.
 panic = "unwind"
+
+[workspace.package]
+authors = ["Menna <emanuele.cryptdev@gmail.com>"]
+edition = "2021"
+repository = "https://github.com/0xMenna01/tispark"
