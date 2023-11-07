@@ -3,6 +3,7 @@ use crate::{
     BlockHash, BlockNumber, ConsensusClient, ConsensusError, Hash, Header, Proof, StateRootHash,
 };
 use aleph_bft_crypto::NodeIndex;
+use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use hex::FromHex;
 use scale_info::TypeInfo;
