@@ -18,6 +18,8 @@ bit-vec = { version = "0.6", default-features = false }
 
 ismp = { git = "https://github.com/polytope-labs/ismp-rs", branch = "main", default-features = false }
 pink-extension = { version = "0.4", default-features = false }
+ink_env = { version = "4", default-features = false }
+hash256-std-hasher = { version = "0.11.0", default-features = false }
 
 primitives = { path = "../primitives", default-features = false }
 
@@ -25,6 +27,7 @@ primitives = { path = "../primitives", default-features = false }
 default = ["std"]
 std = [
     "log/std",
+    "hash256-std-hasher/std",
     "hex/std",
     "codec/std",
     "scale-info/std",

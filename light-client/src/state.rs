@@ -1,18 +1,21 @@
-use crate::{BlockNumber, GetSingleState, StateProofError, StateRootHash};
+use super::Hash;
+use crate::{BlockNumber, ContractBlakeTwo256, ContractKeccak256, GetSingleState, StateProofError};
+use alloc::{borrow::ToOwned, vec::Vec};
 use codec::{Decode, Encode};
 use primitives::{commit_reveal::SecretKey, phala_ismp::GetResponseProof};
-use alloc::{borrow::ToOwned, vec::Vec};
 
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
 pub struct GetResponse(pub BlockNumber, pub GetResponseProof);
 
 impl GetResponse {
-    pub fn state_root(&self) -> StateRootHash {
+    pub fn state_root(&self) -> Hash {
         self.1.state_root().state_root
     }
 }
 
 impl GetSingleState for GetResponse {
+    type Keccac = ContractKeccak256;
+    type Blake2 = ContractBlakeTwo256;
     fn verify_key_uniquness(&self) -> bool {
         self.1.keys().len() == 1
     }
@@ -23,7 +26,7 @@ impl GetSingleState for GetResponse {
         }
 
         self.1
-            .verify_state_proof()
+            .verify_state_proof::<Self::Keccac, Self::Blake2>()
             .map_err(|_| StateProofError::StateVerifyError)
             .and_then(|proof_result| {
                 // Since there is only a single key, we take the first key value pair

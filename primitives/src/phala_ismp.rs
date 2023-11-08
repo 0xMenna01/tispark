@@ -1,7 +1,7 @@
 use alloc::{collections::BTreeMap, format, vec::Vec};
 use codec::{Decode, Encode};
 use ismp::{consensus::StateCommitment, error::Error};
-use sp_runtime::traits::{BlakeTwo256, Keccak256};
+use sp_core::{Hasher, H256};
 use sp_trie::{LayoutV0, StorageProof, Trie, TrieDBBuilder};
 
 /// Proof holds the relevant proof data.
@@ -57,15 +57,17 @@ impl GetResponseProof {
     }
 
     /// Lifted directly from [`ismp_primitives::state_machine::verify_state_proof`](https://github.com/polytope-labs/ismp-substrate/blob/ed1127dd02548ee45d30ddc0e82e4adbd9834bb8/pallet-ismp/primitives/state-machine/src/lib.rs)
-    pub fn verify_state_proof(&self) -> Result<BTreeMap<Vec<u8>, Option<Vec<u8>>>, Error> {
+    pub fn verify_state_proof<Keccak: Hasher<Out = H256>, Blake2: Hasher<Out = H256>>(
+        &self,
+    ) -> Result<BTreeMap<Vec<u8>, Option<Vec<u8>>>, Error> {
         let state_proof: SubstrateStateProof = codec::Decode::decode(&mut &*self.proof.proof)
             .map_err(|e| Error::ImplementationSpecific(format!("failed to decode proof: {e:?}")))?;
 
         let data = match state_proof.hasher {
             HashAlgorithm::Keccak => {
-                let db = StorageProof::new(state_proof.storage_proof).into_memory_db::<Keccak256>();
+                let db = StorageProof::new(state_proof.storage_proof).into_memory_db::<Keccak>();
                 let trie =
-                    TrieDBBuilder::<LayoutV0<Keccak256>>::new(&db, &self.root.state_root).build();
+                    TrieDBBuilder::<LayoutV0<Keccak>>::new(&db, &self.root.state_root).build();
 
                 self.keys
                     .clone()
@@ -81,11 +83,10 @@ impl GetResponseProof {
                     .collect::<Result<BTreeMap<_, _>, _>>()?
             }
             HashAlgorithm::Blake2 => {
-                let db =
-                    StorageProof::new(state_proof.storage_proof).into_memory_db::<BlakeTwo256>();
+                let db = StorageProof::new(state_proof.storage_proof).into_memory_db::<Blake2>();
 
                 let trie =
-                    TrieDBBuilder::<LayoutV0<BlakeTwo256>>::new(&db, &self.root.state_root).build();
+                    TrieDBBuilder::<LayoutV0<Blake2>>::new(&db, &self.root.state_root).build();
                 self.keys
                     .clone()
                     .into_iter()

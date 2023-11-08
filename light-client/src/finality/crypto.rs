@@ -1,6 +1,7 @@
 use super::types::{AlephNodeIndex, NodeCount, PartialMultisignature, Signature, SignatureSet};
 use alloc::boxed::Box;
 use codec::{Decode, Encode};
+use pink_extension::{chain_extension::SigType, ext as contract_ext};
 use scale_info::TypeInfo;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::RuntimeAppPublic;
@@ -21,6 +22,17 @@ pub type AuthorityId = app::Public;
 /// Verify the signature given an authority id.
 pub fn verify(authority: &AuthorityId, message: &[u8], signature: &AlephSignature) -> bool {
     authority.verify(&message, &signature.get())
+}
+
+/// Verify the signature given an authority id from a phat contract
+pub fn verify_from_contract(
+    authority: &AuthorityId,
+    message: &[u8],
+    signature: &AlephSignature,
+) -> bool {
+    let key = authority.to_raw_vec();
+    let signature = signature.get().to_vec();
+    contract_ext().verify(SigType::Ed25519, &key, message, &signature)
 }
 
 /// Wrapper for `SignatureSet` to be able to implement both legacy and current `PartialMultisignature` trait.

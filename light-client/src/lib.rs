@@ -4,9 +4,11 @@ extern crate alloc;
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use finality::types::NodeIndex;
+use ink_env::hash::{Blake2x256 as InkBlakeTwo256, CryptoHash, Keccak256 as InkKeccak256};
+use sp_core::Hasher;
 use sp_runtime::{
     generic,
-    traits::{BlakeTwo256, HashOutput, Header as HeaderT},
+    traits::{BlakeTwo256, Header as HeaderT},
 };
 pub use state::GetCommitmentResponseProof;
 pub use state::GetResponse;
@@ -21,7 +23,7 @@ pub struct AccountId([u8; 32]);
 
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 pub type BlockHash = <Header as HeaderT>::Hash;
-pub type StateRootHash = <Header as HeaderT>::Hash;
+
 pub type BlockNumber = u32;
 
 /// A hash of some data used by the chain.
@@ -48,13 +50,12 @@ pub enum ConsensusError {
 pub trait Proof: 'static + Send + Sync + Sized + Clone + Eq + PartialEq + core::hash::Hash {}
 
 pub trait ConsensusClient {
-    type ConsensusState: HashOutput;
     type ConsensusProof: Proof;
 
     /// Verifies a consensus state. It proves that the Blockchain has reached a certain height through a consensus proof.
     fn verify_consensus(
         &self,
-        consensus_state: Self::ConsensusState,
+        consensus_state: Hash,
         proof: Self::ConsensusProof,
     ) -> Result<Vec<NodeIndex>, ConsensusError>;
 }
@@ -70,11 +71,47 @@ pub struct VersionChange {
 }
 
 pub trait GetSingleState {
+    type Keccac: Hasher;
+    type Blake2: Hasher;
     /// Verifies wheteher the state that needs to be verified is associated to a single (key, value) pair
     fn verify_key_uniquness(&self) -> bool;
 
     /// Verifies the actual state through the Trie
     fn verify_state(&self) -> Result<Vec<u8>, StateProofError>;
+}
+
+/// Custom hash implementations to be compatible with ink! smart contracts
+#[derive(PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ContractKeccak256;
+
+impl Hasher for ContractKeccak256 {
+    type Out = sp_core::H256;
+    type StdHasher = hash256_std_hasher::Hash256StdHasher;
+    const LENGTH: usize = 32;
+
+    fn hash(s: &[u8]) -> Self::Out {
+        let mut output = [0_u8; Self::LENGTH];
+        InkKeccak256::hash(s, &mut output);
+        output.into()
+    }
+}
+
+/// Custom hash implementations to be compatible with ink! smart contracts
+#[derive(PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ContractBlakeTwo256;
+
+impl Hasher for ContractBlakeTwo256 {
+    type Out = sp_core::H256;
+    type StdHasher = hash256_std_hasher::Hash256StdHasher;
+    const LENGTH: usize = 32;
+
+    fn hash(s: &[u8]) -> Self::Out {
+        let mut output = [0_u8; Self::LENGTH];
+        InkBlakeTwo256::hash(s, &mut output);
+        output.into()
+    }
 }
 
 #[cfg(test)]
