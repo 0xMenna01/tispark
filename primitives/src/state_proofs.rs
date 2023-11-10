@@ -1,4 +1,4 @@
-use alloc::{collections::BTreeMap, format, vec::Vec};
+use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use codec::{Decode, Encode};
 use sp_core::{Hasher, H256};
 use sp_trie::{LayoutV0, StorageProof, Trie, TrieDBBuilder};
