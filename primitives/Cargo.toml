@@ -34,6 +34,9 @@ std = [
 	"sp-trie/std",
 	"crypto/std",
 ]
+full_crypto = [
+	"crypto/full_crypto",
+]
 runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 ]
