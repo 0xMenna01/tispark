@@ -37,6 +37,7 @@ std = [
     "pink-extension/std",
     "ink_env/std",
     "ismp/std",
+    "primitives/std",
 ]
 ink-as-dependency = []
 
