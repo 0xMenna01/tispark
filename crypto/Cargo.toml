@@ -14,7 +14,7 @@ rand = "0.8.5"
 hex = "0.4"
 
 [features]
-default = [ "full_crypto" ]
+default = [ "std" ]
 std = [ 
     "sp-core/std",
     "sp-application-crypto/std",
