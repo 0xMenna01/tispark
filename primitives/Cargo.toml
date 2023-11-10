@@ -16,7 +16,7 @@ sp-trie = { git = "https://github.com/Cardinal-Cryptography/substrate.git", bran
 log = { version = "0.4.17", default-features = false }
 
 ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
-ismp = { path = "https://github.com/0xMenna01/ismp-rs", default-features = false }
+
 
 crypto = { path = "../crypto" }
 
@@ -32,7 +32,6 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-trie/std",
-	"ismp/std",
 	"crypto/std",
 ]
 runtime-benchmarks = [

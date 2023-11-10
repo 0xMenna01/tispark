@@ -1,8 +1,25 @@
 use alloc::{collections::BTreeMap, format, vec::Vec};
 use codec::{Decode, Encode};
-use ismp::{consensus::StateCommitment, error::Error};
 use sp_core::{Hasher, H256};
 use sp_trie::{LayoutV0, StorageProof, Trie, TrieDBBuilder};
+
+#[derive(Debug)]
+pub enum Error {
+    KeyError(String),
+    DecodingProofError(String),
+}
+
+/// The state commitment represents a commitment to the state machine's state (trie) at a given
+/// height. Optionally holds a commitment to the ISMP request/response trie if supported by the
+/// state machine.
+#[derive(Debug, Clone, Copy, Encode, Decode, scale_info::TypeInfo, PartialEq, Hash, Eq)]
+
+pub struct StateCommitment {
+    /// Timestamp in seconds
+    pub timestamp: u64,
+    /// Root hash of the global state trie.
+    pub state_root: H256,
+}
 
 /// Proof holds the relevant proof data.
 #[derive(Debug, Clone, Encode, Decode, scale_info::TypeInfo, PartialEq, Eq)]
@@ -56,12 +73,11 @@ impl GetResponseProof {
         &self.root
     }
 
-    /// Lifted directly from [`ismp_primitives::state_machine::verify_state_proof`](https://github.com/polytope-labs/ismp-substrate/blob/ed1127dd02548ee45d30ddc0e82e4adbd9834bb8/pallet-ismp/primitives/state-machine/src/lib.rs)
     pub fn verify_state_proof<Keccak: Hasher<Out = H256>, Blake2: Hasher<Out = H256>>(
         &self,
     ) -> Result<BTreeMap<Vec<u8>, Option<Vec<u8>>>, Error> {
         let state_proof: SubstrateStateProof = codec::Decode::decode(&mut &*self.proof.proof)
-            .map_err(|e| Error::ImplementationSpecific(format!("failed to decode proof: {e:?}")))?;
+            .map_err(|e| Error::DecodingProofError(format!("failed to decode proof: {e:?}")))?;
 
         let data = match state_proof.hasher {
             HashAlgorithm::Keccak => {
@@ -74,9 +90,7 @@ impl GetResponseProof {
                     .into_iter()
                     .map(|key| {
                         let value = trie.get(&key).map_err(|e| {
-                            Error::ImplementationSpecific(format!(
-                                "Error reading state proof: {e:?}"
-                            ))
+                            Error::KeyError(format!("Error reading state proof: {e:?}"))
                         })?;
                         Ok((key, value))
                     })
@@ -92,9 +106,7 @@ impl GetResponseProof {
                     .into_iter()
                     .map(|key| {
                         let value = trie.get(&key).map_err(|e| {
-                            Error::ImplementationSpecific(format!(
-                                "Error reading state proof: {e:?}"
-                            ))
+                            Error::KeyError(format!("Error reading state proof: {e:?}"))
                         })?;
                         Ok((key, value))
                     })

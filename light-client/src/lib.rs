@@ -120,8 +120,9 @@ mod test {
 
     use codec::Encode;
     use hex::FromHex;
-    use ismp::consensus::StateCommitment;
-    use primitives::phala_ismp::{GetResponseProof, HashAlgorithm, Proof, SubstrateStateProof};
+    use primitives::state_proofs::{
+        GetResponseProof, HashAlgorithm, Proof, StateCommitment, SubstrateStateProof,
+    };
 
     use crate::{
         consensus::{AlephConsensusClient, AlephConsensusLogBuilder},
@@ -236,7 +237,6 @@ mod test {
 
         let root = StateCommitment {
             timestamp: dummy_timestamp,
-            overlay_root: None,
             state_root,
         };
 

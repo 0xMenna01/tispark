@@ -13,10 +13,10 @@ sp-core = { git = "https://github.com/Cardinal-Cryptography/substrate.git", bran
 sp-application-crypto = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
 hex = { version = "0.4", default-features = false }
 log = { version = "0.4.17", default-features = false }
-derive_more = { version = "0.99", default-features = false }
+derive_more = { version = "0.99", default-features = false, features = ["from", "into"] }
 bit-vec = { version = "0.6", default-features = false }
 
-ismp = { git = "https://github.com/0xMenna01/ismp-rs", branch = "main", default-features = false }
+
 pink-extension = { version = "0.4", default-features = false }
 ink_env = { version = "4", default-features = false }
 hash256-std-hasher = { version = "0.11.0", default-features = false }
@@ -28,7 +28,6 @@ default = ["std"]
 std = [
     "log/std",
     "hash256-std-hasher/std",
-    "hex/std",
     "codec/std",
     "scale-info/std",
     "sp-core/std",
@@ -36,7 +35,6 @@ std = [
     "sp-application-crypto/std",
     "pink-extension/std",
     "ink_env/std",
-    "ismp/std",
     "bit-vec/std",
     "primitives/std",
 ]
