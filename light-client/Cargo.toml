@@ -7,8 +7,7 @@ edition = "2021"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
-scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-serde = { version = "1.0", features = ["derive"], optional = true }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 sp-runtime = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
 sp-core = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
 sp-application-crypto = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
@@ -29,7 +28,6 @@ default = ["std"]
 std = [
     "log/std",
     "hash256-std-hasher/std",
-    "serde",
     "codec/std",
     "scale-info/std",
     "sp-core/std",
