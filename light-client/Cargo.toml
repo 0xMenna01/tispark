@@ -36,6 +36,9 @@ std = [
     "sp-application-crypto/std",
     "pink-extension/std",
     "ink_env/std",
-    "primitives/std",
     "ismp/std",
+    "bit-vec/std",
+    "primitives/std",
 ]
+ink-as-dependency = []
+
