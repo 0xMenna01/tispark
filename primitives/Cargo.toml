@@ -18,7 +18,7 @@ log = { version = "0.4.17", default-features = false }
 ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
 ismp = { path = "https://github.com/0xMenna01/ismp-rs", default-features = false }
 
-crypto = { path = "../crypto", default-features }
+crypto = { path = "../crypto" }
 
 
 [features]
