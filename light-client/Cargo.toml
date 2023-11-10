@@ -34,7 +34,8 @@ std = [
     "sp-core/std",
     "sp-runtime/std",
     "sp-application-crypto/std",
-     "pink-extension/std",
+    "pink-extension/std",
+    "ink_env/std",
+    "primitives/std",
+    "ismp/std",
 ]
-ink-as-dependency = []
-
