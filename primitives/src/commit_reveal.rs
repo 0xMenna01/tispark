@@ -32,7 +32,10 @@ pub struct RevealProof<CommitMetadata> {
 #[derive(Debug)]
 pub enum CommitRevealError {
     CommitError,
+    InvalidCommitmentId,
+    AlreadyCommitted,
     RevealError,
+    InvalidCommitForReveal,
     AlreadyRevealed,
     DecryptionRejected,
     EncryptionError,
