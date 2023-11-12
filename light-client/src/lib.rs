@@ -158,7 +158,7 @@ mod test {
         let justifications = Vec::from_hex("030090020038018254511e985c7bfcef723ef46ca033610ac5ddab70e96270fd412d9755ff3ac32a17f27defa04f23223a6c94830f3b00104b7d9642fccfddc59107e837d7a60001420b897a82cea8fe3115238c690a1484e809593cd02058efb03f5d9fd8a70545775e1e3767912ce630cf69031504f433beaeb0bc0318b071391c9999582be7020153a97ac8511d3170e9e4aa45b96e1a564d607ffa76b8c2bd13f895d6812c5c599d5ec53f9dc285a5bc57afd479d81e21369e993feae316b8f7050df154c4b8010000010145131dbb53b971cfcf114595878c5971741dee55641c323ef0fa2659bf2ddf215c1d7d67a1a6fcee2d0d884830b0410a9b4cfcbb7f884259953c5792cce40101f45d3983eff551ffcd234abdf6a4b1f0229876367a42625d50ac61373aaaf3ef10e13ea85664042136e6a09b6147c56f7ab6fa650c7d26f76884d7d2220b8a0a01990bed6dabb3304486583e3de4548cb39759bc05f9a6660e6b253cdc0217b26f0944d924b39e5d17f047263969b5c357f0ba4d36676136fba413cfefc5210e09000183cd0344b8b1f8d8ba8f52f98a27a6f706c87656b7eb9bb857f6ecbe2f1485fed6a1bccc593d6d31a689d17d748ccbbfbdeae15f50bc729f7b45b14fe62233060164d5822652a4970ab9b7402be0ac74e2d6bc6a3e5a55262e15629f8618882fcbec070b317614e2cfc751bd516f38cbad33733d56b67569dc3c5e1f23eaa7c40200014edffa7e3c0749edbff2955cc48cdf89bff067a8d5cf690496347a6285c1fcbe98576af1781d5daa81bd626a23cffb3bfc69920a58120dc68773eed2af38680c016cfc7cba906de4bef7d86961ebe4ff7ec20a53b6ad9f5174f9bb8bfa89adf3e4bea28946917bd4eeb76d57488279bcbd8ec5c8d3e21fffb2fc9c48efa0604005").unwrap();
 
         let justification = justification::backwards_compatible_decode(justifications).unwrap();
-
+        
         let mut authority_keys = Vec::new();
         authorities.into_iter().for_each(|key| {
             let pub_key = Vec::from_hex(&key).unwrap();
@@ -248,7 +248,7 @@ mod test {
 
         let response_proof = GetResponseProof::new(&keys, &root, &proof);
 
-        let get_response = GetResponse(61_549_453, response_proof);
+        let get_response = GetResponse(response_proof);
 
         assert_eq!(
             get_response.verify_state(),
