@@ -184,7 +184,18 @@ impl PhatContractConsensusClient {
         parent_hash: Hash,
         digest: Digest,
     ) -> Hash {
-        Header::new(block, extrinsics_root, state_root, parent_hash, digest)
+        ink_hash_header(block, extrinsics_root, state_root, parent_hash, digest)
             .using_encoded(|consensus_state| ContractBlakeTwo256::hash(consensus_state))
     }
+}
+
+pub fn ink_hash_header(
+    block: BlockNumber,
+    extrinsics_root: Hash,
+    state_root: Hash,
+    parent_hash: Hash,
+    digest: Digest,
+) -> Hash {
+    Header::new(block, extrinsics_root, state_root, parent_hash, digest)
+        .using_encoded(|consensus_state| ContractBlakeTwo256::hash(consensus_state))
 }

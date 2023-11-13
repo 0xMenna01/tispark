@@ -125,40 +125,41 @@ mod test {
     };
 
     use crate::{
-        consensus::{AlephConsensusClient, AlephConsensusLogBuilder},
-        finality::{crypto::AuthorityId, justification},
+        consensus::{AlephConsensusLogBuilder, PhatContractConsensusClient},
+        finality::{
+            crypto::{verify, AuthorityId, AuthoritySignature},
+            justification,
+        },
         state::GetResponse,
         BlockHash, ConsensusClient, GetSingleState, Hash,
     };
+    use pink_extension::chain_extension::mock as pink_mock;
 
     #[test]
     fn verify_consensus() {
+        pink_mock::mock_verify(|_, pubkey, msg, sign| {
+            let auth_public =
+                AuthorityId::try_from(pubkey).expect("Expected to be a valid public key");
+            let signature = AuthoritySignature::try_from(sign).expect("Expected a valid signature");
+            verify(&auth_public, msg, &signature.into())
+        });
+
         // Data has been taken directly from the Chain
         let authorities = vec![
-            "3051fd3d9488aaeb5fdb2236841fb9332eae7a5dab2e33923ae29db71564242a",
-            "bc16685f99c1ebfbaeb0bb1b1f6b81f078977cfb5418c4e125b8a989817d9fcf",
-            "8f725daf2944ef12357e298058c317a409d313d5379fee88abddd2967b0c02da",
-            "ce10aee99d0cfd087566ab79a09d7b9b6f2ede52b6014468d79cb52d484c1584",
-            "1351b4a63b101aa06bce0c9336823dc35186b95105e629a1e8adffb79a23b3ec",
-            "def643f576925be43e4e6f139c6d6787b3da8f637a3d29fef01ccaf24d82259e",
-            "55f42ea5496bd242dc59f3a299ebc4f3ad6ea1b47b745abdda2b3a6129cf0afe",
-            "749e7ca3ff95b3c92608500525f33071cd2ce4e592ba9535a6eb7bac1b667faa",
-            "4e9800a7078b680ba72b0f077d6803c3d35ccdcba15b618542801a5cdf5c949b",
-            "3e1f808aba722e8c2b605186d525330fc0602448aa1a0e4095db3e691e82aa53",
-            "30b1f36452a50aefec9618c9f44ff10e9927a2f3dfafcd6851437bba6bd58d4e",
-            "37371d98a2d7d88096414e55e861e06a07ba7645c49d446cc5e414bb3c00d456",
-            "8e6efcceba526685383b74cc53eb09f8fe2e6bcb9988e2bc618ead55251f7e97",
-            "c86669783d7c1c1516dd7bd70dcc893232c9a73b4e1095557ef3a929d324904a",
+            "a824108d28376dea1ef85f14a8bd52e4448429c3ac09572b6e1dc324fbbdbd07",
+            "ed0d45bd4a5c55e3c1855187ac903700d7f642c46561ce4466d6d4eef2c4dbbc",
+            "7a46880947ce98d4379d0bedd793f4a99ee6cd3710b10196d9a094abed234378",
+            "e852b5b72299153d1f61b4a4bf7f28474ae8fa3d030d98b6bcb53b8e5931e638",
         ];
         let sudo =
             Vec::from_hex("38fdbe98bb40723c9243f115b0684791f37fc92222640c478abd91e1ed48a4ee")
                 .unwrap();
         let emergency_finalizer = AuthorityId::try_from(sudo.as_slice()).unwrap();
 
-        let justifications = Vec::from_hex("030090020038018254511e985c7bfcef723ef46ca033610ac5ddab70e96270fd412d9755ff3ac32a17f27defa04f23223a6c94830f3b00104b7d9642fccfddc59107e837d7a60001420b897a82cea8fe3115238c690a1484e809593cd02058efb03f5d9fd8a70545775e1e3767912ce630cf69031504f433beaeb0bc0318b071391c9999582be7020153a97ac8511d3170e9e4aa45b96e1a564d607ffa76b8c2bd13f895d6812c5c599d5ec53f9dc285a5bc57afd479d81e21369e993feae316b8f7050df154c4b8010000010145131dbb53b971cfcf114595878c5971741dee55641c323ef0fa2659bf2ddf215c1d7d67a1a6fcee2d0d884830b0410a9b4cfcbb7f884259953c5792cce40101f45d3983eff551ffcd234abdf6a4b1f0229876367a42625d50ac61373aaaf3ef10e13ea85664042136e6a09b6147c56f7ab6fa650c7d26f76884d7d2220b8a0a01990bed6dabb3304486583e3de4548cb39759bc05f9a6660e6b253cdc0217b26f0944d924b39e5d17f047263969b5c357f0ba4d36676136fba413cfefc5210e09000183cd0344b8b1f8d8ba8f52f98a27a6f706c87656b7eb9bb857f6ecbe2f1485fed6a1bccc593d6d31a689d17d748ccbbfbdeae15f50bc729f7b45b14fe62233060164d5822652a4970ab9b7402be0ac74e2d6bc6a3e5a55262e15629f8618882fcbec070b317614e2cfc751bd516f38cbad33733d56b67569dc3c5e1f23eaa7c40200014edffa7e3c0749edbff2955cc48cdf89bff067a8d5cf690496347a6285c1fcbe98576af1781d5daa81bd626a23cffb3bfc69920a58120dc68773eed2af38680c016cfc7cba906de4bef7d86961ebe4ff7ec20a53b6ad9f5174f9bb8bfa89adf3e4bea28946917bd4eeb76d57488279bcbd8ec5c8d3e21fffb2fc9c48efa0604005").unwrap();
+        let justifications = Vec::from_hex("0300c600001001cfa3a97cb0c48578c61884e1180975d63e70faaeeab3f9418cca164a296682c43236cb0af04dfdaa23fa72b913a5f4acdb7785c79eb5455536454f23a0602a0a000153ceebaa19d1b60622532c3d6f68737321138f88cac38af758f14ae58f29f84aabc2140261ac9150b92f9d9bc5d47621da258fd9d186b040e3c3f90e4b93830c017b159a6d634ee44a20442c875234061026ce6418f5512be9d2dbb0db707568955d536e3d7d20d79d39afcb37f4aa3ff54f31d5c5bcb2eeb39aefb652b1fa7801").unwrap();
 
         let justification = justification::backwards_compatible_decode(justifications).unwrap();
-        
+
         let mut authority_keys = Vec::new();
         authorities.into_iter().for_each(|key| {
             let pub_key = Vec::from_hex(&key).unwrap();
@@ -166,28 +167,28 @@ mod test {
         });
 
         let consensus_client =
-            AlephConsensusClient::new(authority_keys.clone(), emergency_finalizer.clone());
+            PhatContractConsensusClient::new(authority_keys.clone(), emergency_finalizer.clone());
 
         match justification {
             justification::AlephJustification::CommitteeMultisignature(signatures) => {
-                let block_number: u32 = 61_549_453;
+                let block_number: u32 = 81_943;
                 let extriniscs_root = Vec::from_hex(
-                    "b1e1ea8fa70a1d562cb1889b8cb01dbe7b3ffb02b97f078de0a832ca7380febe",
+                    "53cec44cdabc023175d84f55e4f42255419c67f87ae864d59a07b4c303560775",
                 )
                 .unwrap();
                 let extriniscs_root = Hash::from_slice(&extriniscs_root);
                 let state_root = Vec::from_hex(
-                    "510495035e7246e809210fe6b77765e72fcad76ef05541514fc3f4421059bd4e",
+                    "c312a0d65ee784da8dc7fbd7abb4ada9a3affe8e14415484d56b4f5642c123c2",
                 )
                 .unwrap();
                 let state_root = Hash::from_slice(&state_root);
                 let parent_hash = Vec::from_hex(
-                    "9466332cc9aa040141b9cb9532cae4ceeef07482c10425791372edb7e2a56fb3",
+                    "79bfc3089355ae580d473a339935deeffab2f5a07a3d880aa253d6d4b212341a",
                 )
                 .unwrap();
                 let parent_hash = Hash::from_slice(&parent_hash);
 
-                let digest = AlephConsensusLogBuilder::logs("cbd9386500000000", "8233d4f1b48f23886f4d1c9417e4a37e386809a133b5271ac514d68cb4cdde6d33beefc18799f2f9ce7fb4e1d0c777dd8159a1b115d182d0dcac4d6069a2a78f").unwrap().build();
+                let digest = AlephConsensusLogBuilder::logs("b98026e100000000", "0ada5463c19e7a08495dc58decd5a4693e40c44c2f3bcea152b189ac4382c24e3bfed0fae1e88c9a295f70f434bae198d5d6928d309625faa773aab63133ed89").unwrap().build();
 
                 let consensus_state = consensus_client.build_consenus_state(
                     block_number,

@@ -22,6 +22,7 @@ ink_env = { version = "4", default-features = false }
 hash256-std-hasher = { version = "0.11.0", default-features = false }
 
 primitives = { path = "../primitives", default-features = false }
+itertools = "0.10.0"
 
 [features]
 default = ["std"]
