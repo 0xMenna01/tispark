@@ -98,9 +98,9 @@ impl GetResponseProof {
             }
             HashAlgorithm::Blake2 => {
                 let db = StorageProof::new(state_proof.storage_proof).into_memory_db::<Blake2>();
-
                 let trie =
                     TrieDBBuilder::<LayoutV0<Blake2>>::new(&db, &self.root.state_root).build();
+
                 self.keys
                     .clone()
                     .into_iter()
