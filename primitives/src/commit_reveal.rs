@@ -3,10 +3,10 @@ use codec::{Decode, Encode};
 use crypto::{
     aead,
     key_derive::{KeyMaterial, KDF},
-    CryptoError,
+    CryptoError, CryptoHasher, Random,
 };
 use scale_info::TypeInfo;
-use sp_core::H256;
+use sp_core::{Hasher, H256};
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
@@ -14,7 +14,7 @@ const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
 pub type CommitId = H256;
 
 pub trait Commitment<C: Encode, Metadata> {
-    fn commit(value: Commit<C, Metadata>) -> Result<(), CommitRevealError>;
+    fn commit(value: Commit) -> Result<(), CommitRevealError>;
 
     fn reveal(proof: RevealProof) -> Result<Reveal, CommitRevealError>;
 }
@@ -26,7 +26,7 @@ pub struct CommitData {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
-pub struct Commit<EncryptedData, Metadata> {
+pub struct Commit {
     id: CommitId,
     data: CommitData,
 }
@@ -87,43 +87,81 @@ pub struct UnSet;
 /// Setup material for initializing the aes-gcm key and iv to encrypt the data.
 /// Ensure that the encoded metadata is at least 96 bit in size.
 /// Every commitment is binded to a nonce, to ensure the keymaterial changes.
-pub struct Setup<CommitMetadata> {
+pub struct Setup {
+    commit_id: CommitId,
     secret: KeyMaterial<KEY_SIZE>,
-    nonce: IV,
-    metadata: CommitMetadata,
+    iv: IV,
 }
 
-pub struct SchemeReady<PlainText: Encode, CommitMetadata> {
-    setup_material: Setup<CommitMetadata>,
+pub struct SchemeReady<PlainText: Encode> {
+    setup_material: Setup,
     data: PlainText,
 }
+
+#[derive(Encode)]
+struct Height {
+    block_number: u32,
+    timestamp: u64,
+}
+
+#[derive(Encode)]
+pub struct QueryMetadata<Metadata> {
+    height: Height,
+    metadata: Metadata,
+}
+
+#[derive(Encode)]
+pub struct KdfNonce<Metadata> {
+    addons: QueryMetadata<Metadata>,
+    entropy: Vec<u8>,
+}
+
+const ENTROPY_SIZE: u8 = 16;
 
 impl CommitRevealManager<UnSet> {
     /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
     pub fn setup<CommitMetadata: Encode>(
         secret: &[u8],
-        nonce_metadata: CommitMetadata,
-    ) -> Result<CommitRevealManager<Setup<CommitMetadata>>, CryptoError> {
+        metadata: QueryMetadata<CommitMetadata>,
+    ) -> Result<CommitRevealManager<Setup>, CryptoError> {
         let kdf = KDF::<KEY_SIZE>::new(secret);
-        let nonce = nonce_metadata.encode();
-        let secret = kdf.derive_aead_key(&nonce, [KDF_LABEL].as_slice())?;
+        let entropy = Random::get_random_bytes(ENTROPY_SIZE);
+        let nonce = KdfNonce {
+            addons: metadata,
+            entropy,
+        };
+        let commit_id = CryptoHasher::hash(&nonce.encode());
+        let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
+        let iv = nonce.addons.height.encode();
 
         let state = Setup {
+            commit_id,
             secret,
-            nonce,
-            metadata: nonce_metadata,
+            iv,
         };
 
         Ok(CommitRevealManager { state })
     }
+
+    /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
+    pub fn reveal(secret: &[u8], commit_id: H256) -> Result<RevealProof, CryptoError> {
+        let kdf = KDF::<KEY_SIZE>::new(secret);
+
+        let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
+
+        Ok(RevealProof {
+            commit_id,
+            secret: secret.get(),
+        })
+    }
 }
 
-impl<CommitMetadata> CommitRevealManager<Setup<CommitMetadata>> {
+impl CommitRevealManager<Setup> {
     /// inject a plaintext to be encrypted within the commit-reveal manager
     pub fn inject<PlainText: Encode>(
         self,
         data: PlainText,
-    ) -> CommitRevealManager<SchemeReady<PlainText, CommitMetadata>> {
+    ) -> CommitRevealManager<SchemeReady<PlainText>> {
         let state = SchemeReady {
             setup_material: self.state,
             data,
@@ -131,58 +169,54 @@ impl<CommitMetadata> CommitRevealManager<Setup<CommitMetadata>> {
 
         CommitRevealManager { state }
     }
-
-    /// provides the reveal proof
-    pub fn reveal(self) -> RevealProof<CommitMetadata> {
-        RevealProof {
-            commit_metadata: self.state.metadata,
-            secret: self.state.secret.get(),
-        }
-    }
 }
 
-impl<PlainText: Encode, CommitMetadata>
-    CommitRevealManager<SchemeReady<PlainText, CommitMetadata>>
-{
-    pub fn commit(self) -> Result<Commit<EncryptedData, CommitMetadata>, CommitRevealError> {
+impl<PlainText: Encode> CommitRevealManager<SchemeReady<PlainText>> {
+    pub fn commit(self) -> Result<Commit, CommitRevealError> {
         // 1. Encode data to encrypt
         let mut data = self.state.data.encode();
 
         // 2. Set up iv and secret
-        let nonce = self.state.setup_material.nonce;
-        let iv = aead::generate_iv(&nonce);
+        let iv = self.state.setup_material.iv;
+        let iv = aead::generate_iv(&iv);
         let secret = self.state.setup_material.secret.get();
 
         // 3. Encrypt
         aead::encrypt(&iv, &secret, &mut data).map_err(|_| CommitRevealError::EncryptionError)?;
 
-        Ok(Commit {
-            metadata: self.state.setup_material.metadata,
+        let data = CommitData {
             data,
-            nonce,
+            iv: iv.to_vec(),
+        };
+
+        Ok(Commit {
+            id: self.state.setup_material.commit_id,
+            data,
         })
     }
 }
 
-impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
-    pub fn commit_already_encoded(
-        self,
-    ) -> Result<Commit<EncryptedData, CommitMetadata>, CommitRevealError> {
+impl CommitRevealManager<SchemeReady<Vec<u8>>> {
+    pub fn commit_already_encoded(self) -> Result<Commit, CommitRevealError> {
         // 1. Already encoded
         let mut data = self.state.data;
 
         // 2. Set up iv and secret
-        let nonce = self.state.setup_material.nonce;
-        let iv = aead::generate_iv(&nonce);
+        let iv = self.state.setup_material.iv;
+        let iv = aead::generate_iv(&iv);
         let secret = self.state.setup_material.secret.get();
 
         // 3. Encrypt
         aead::encrypt(&iv, &secret, &mut data).map_err(|_| CommitRevealError::EncryptionError)?;
 
-        Ok(Commit {
-            metadata: self.state.setup_material.metadata,
+        let data = CommitData {
             data,
-            nonce,
+            iv: iv.to_vec(),
+        };
+
+        Ok(Commit {
+            id: self.state.setup_material.commit_id,
+            data,
         })
     }
 }
@@ -191,7 +225,6 @@ impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
 mod test {
 
     use super::*;
-    use ring::rand::SecureRandom;
 
     #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
     struct PlainTextDemo {
@@ -208,11 +241,9 @@ mod test {
 
     #[test]
     fn commit_reveal() {
-        let mut secret = [0_u8; 32];
-        let rand = ring::rand::SystemRandom::new();
-        rand.fill(&mut secret).unwrap();
+        let secret = Random::get_random_bytes(32);
 
-        let nonce_metadata = CommitMetadataDemo {
+        let metadata = CommitMetadataDemo {
             bet_id: 1,
             game_id: 1,
             account_id: b"12345".to_vec(),
@@ -223,17 +254,24 @@ mod test {
             result: 11,
         };
 
-        let commit = CommitRevealManager::setup(&secret, nonce_metadata.clone())
-            .unwrap()
-            .inject(plain_text.clone())
-            .commit()
-            .unwrap();
+        let commit = CommitRevealManager::setup(
+            &secret,
+            QueryMetadata {
+                height: Height {
+                    block_number: 100,
+                    timestamp: 1234,
+                },
+                metadata,
+            },
+        )
+        .unwrap()
+        .inject(plain_text.clone())
+        .commit()
+        .unwrap();
 
-        let reveal = CommitRevealManager::setup(&secret, nonce_metadata)
-            .unwrap()
-            .reveal();
+        let reveal = CommitRevealManager::reveal(&secret, commit.id).unwrap();
 
-        let decrypted = DecryptedData::new(reveal.secret, commit.nonce, commit.data)
+        let decrypted = DecryptedData::new(reveal.secret, commit.data.iv, commit.data.data)
             .decrypt()
             .unwrap();
 
