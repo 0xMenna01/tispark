@@ -20,7 +20,6 @@ ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
 
 crypto = { path = "../crypto", default-features = false }
 
-
 [features]
 default = [ "std" ]
 std = [
@@ -36,6 +35,9 @@ std = [
 ]
 full_crypto = [
 	"crypto/full_crypto",
+]
+phat_contract = [
+	"crypto/phat_contract",
 ]
 runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",

@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use crypto::{
     aead,
@@ -5,27 +6,34 @@ use crypto::{
     CryptoError,
 };
 use scale_info::TypeInfo;
-use alloc::vec::Vec;
+use sp_core::H256;
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
 
+pub type CommitId = H256;
+
 pub trait Commitment<C: Encode, Metadata> {
     fn commit(value: Commit<C, Metadata>) -> Result<(), CommitRevealError>;
 
-    fn reveal(proof: RevealProof<Metadata>) -> Result<Reveal, CommitRevealError>;
+    fn reveal(proof: RevealProof) -> Result<Reveal, CommitRevealError>;
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
+pub struct CommitData {
+    data: EncryptedData,
+    iv: IV,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
 pub struct Commit<EncryptedData, Metadata> {
-    pub metadata: Metadata,
-    pub data: EncryptedData,
-    pub nonce: Nonce,
+    id: CommitId,
+    data: CommitData,
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
-pub struct RevealProof<CommitMetadata> {
-    pub commit_metadata: CommitMetadata,
+pub struct RevealProof {
+    pub commit_id: CommitId,
     pub secret: SecretKey,
 }
 
@@ -43,11 +51,11 @@ pub enum CommitRevealError {
 }
 
 pub type SecretKey = Vec<u8>;
-pub type Nonce = Vec<u8>;
+pub type IV = Vec<u8>;
 
 pub struct DecryptedData {
     key: SecretKey,
-    iv: Nonce,
+    iv: IV,
     encrypted: EncryptedData,
 }
 
@@ -55,7 +63,7 @@ pub type EncryptedData = Vec<u8>;
 pub type Reveal = Vec<u8>;
 
 impl DecryptedData {
-    pub fn new(key: SecretKey, iv: Nonce, encrypted: EncryptedData) -> Self {
+    pub fn new(key: SecretKey, iv: IV, encrypted: EncryptedData) -> Self {
         DecryptedData { key, iv, encrypted }
     }
 
@@ -81,7 +89,7 @@ pub struct UnSet;
 /// Every commitment is binded to a nonce, to ensure the keymaterial changes.
 pub struct Setup<CommitMetadata> {
     secret: KeyMaterial<KEY_SIZE>,
-    nonce: Nonce,
+    nonce: IV,
     metadata: CommitMetadata,
 }
 
@@ -89,8 +97,6 @@ pub struct SchemeReady<PlainText: Encode, CommitMetadata> {
     setup_material: Setup<CommitMetadata>,
     data: PlainText,
 }
-
-pub type GameId = u32;
 
 impl CommitRevealManager<UnSet> {
     /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
