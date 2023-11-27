@@ -54,20 +54,18 @@ impl hkdf::KeyType for My<usize> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ring::rand::SecureRandom;
+    use crate::Random;
 
     #[test]
     fn test_key_derivation() {
         let dummy_nonce = [0_u8; 12];
         let info = [b"test_key_derivation".as_slice()];
 
-        let mut secret = [0_u8; 32];
-        let rand = ring::rand::SystemRandom::new();
-        rand.fill(&mut secret).unwrap();
+        let secret = Random::get_random_bytes(32);
+        assert_ne!(secret, vec![0u8; 32]);
 
         let kdf = KDF::<32>::new(secret.as_slice());
-        let aead_key: Result<KeyMaterial<32>, CryptoError> =
-            kdf.derive_aead_key(dummy_nonce.as_ref(), &info);
+        let aead_key = kdf.derive_aead_key(dummy_nonce.as_ref(), &info);
 
         assert!(aead_key.is_ok());
         let aead_key = aead_key.unwrap();

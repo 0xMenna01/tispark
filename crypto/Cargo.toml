@@ -4,10 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+scale-info = { version = "2.5.0", default-features = false, features = ["derive", "serde"] }
 sp-core = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
 sp-application-crypto = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
+ink_env = { version = "4", default-features = false }
+hash256-std-hasher = { version = "0.11.0", default-features = false }
 
 ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
+rand = { version = "0.8.5", default-features = false, features = ["alloc"] }
+pink-extension = { version = "0.4", default-features = false, optional = true }
 
 [dev-dependencies]
 rand = "0.8.5"
@@ -16,10 +21,17 @@ hex = "0.4"
 [features]
 default = [ "std" ]
 std = [ 
+    "scale-info/std",
     "sp-core/std",
     "sp-application-crypto/std",
- ]
+    "rand/std",
+    "pink-extension/std",
+    "sp-core/std",
+    "ink_env/std",
+    "hash256-std-hasher/std",
+]
 full_crypto = [
     "sp-core/full_crypto",
     "sp-application-crypto/full_crypto",
 ]
+phat_contract = ["pink-extension"]

@@ -30,7 +30,7 @@ fn load_key(raw: &[u8]) -> Result<AeadKey, CryptoError> {
 pub fn encrypt(iv: &IV, secret: &[u8], in_out: &mut Vec<u8>) -> Result<(), CryptoError> {
     let nonce = ring::aead::Nonce::assume_unique_for_key(*iv);
     let key = load_key(secret)?;
-
+    
     key.0
         .seal_in_place_append_tag(nonce, ring::aead::Aad::empty(), in_out)
         .map_err(|_| CryptoError::AeadEncryptError)?;
