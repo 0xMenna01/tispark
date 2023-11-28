@@ -9,8 +9,6 @@ pub mod aead;
 pub mod key_derive;
 
 use alloc::vec::Vec;
-use ink_env::hash::{Blake2x256 as InkBlakeTwo256, CryptoHash};
-use sp_core::{Blake2Hasher, Hasher};
 
 #[derive(Debug)]
 pub enum CryptoError {
@@ -43,23 +41,4 @@ impl Random {
     }
 }
 
-/// Hashing type
-
-pub type CryptoHasher = ContractBlakeTwo256;
-
-/// Custom hash implementations to be compatible with ink! smart contracts
-#[derive(PartialEq, Eq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ContractBlakeTwo256;
-
-impl Hasher for ContractBlakeTwo256 {
-    type Out = sp_core::H256;
-    type StdHasher = hash256_std_hasher::Hash256StdHasher;
-    const LENGTH: usize = 32;
-
-    fn hash(s: &[u8]) -> Self::Out {
-        let mut output = [0_u8; Self::LENGTH];
-        InkBlakeTwo256::hash(s, &mut output);
-        output.into()
-    }
-}
+pub type CryptoHasher = ink_env::hash::Blake2x256;

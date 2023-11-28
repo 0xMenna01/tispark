@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use crypto::{
     aead,
@@ -5,7 +6,6 @@ use crypto::{
     CryptoError,
 };
 use scale_info::TypeInfo;
-use alloc::vec::Vec;
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
