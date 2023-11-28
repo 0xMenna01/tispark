@@ -5,6 +5,7 @@ members = [
     "crypto",
     "primitives",
     "light-client",
+    "commit-reveal-pallet",
 ]
 
 [profile.release]

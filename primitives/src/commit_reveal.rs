@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use crypto::{
-    aead::{self, IV},
+    aead,
     key_derive::{KeyMaterial, KDF},
     CryptoError, CryptoHasher, Random,
 };
@@ -10,21 +10,14 @@ use sp_core::{Hasher, H256};
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
-const ENTROPY_SIZE: u8 = 128 / 8;
+const ENTROPY_SIZE: u8 = 32; // aka 256 bit
 
 pub type CommitId = H256;
 pub type EncryptedData = Vec<u8>;
 pub type Reveal = Vec<u8>;
 type EntropyBytes = [u8; ENTROPY_SIZE as usize];
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
-pub struct SecretKey([u8; KEY_SIZE]);
-
-impl SecretKey {
-    pub fn get(&self) -> &[u8] {
-        &self.0
-    }
-}
+pub type SecretKey = Vec<u8>;
 
 pub trait Commitment<C: Encode, Metadata> {
     fn commit(value: Commit<Metadata>) -> Result<(), CommitRevealError>;
@@ -36,7 +29,21 @@ pub trait Commitment<C: Encode, Metadata> {
 pub struct Commit<Metadata> {
     id: CommitId,
     data: (EncryptedData, Metadata),
-    iv: IV,
+    iv: Vec<u8>,
+}
+
+impl<Metadata: Clone> Commit<Metadata> {
+    pub fn get_id(&self) -> CommitId {
+        self.id.clone()
+    }
+
+    pub fn get_commitment(&self) -> (EncryptedData, Vec<u8>) {
+        (self.data.0.clone(), self.iv.clone())
+    }
+
+    pub fn get_metadata(&self) -> Metadata {
+        self.data.1.clone()
+    }
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
@@ -60,19 +67,19 @@ pub enum CommitRevealError {
 
 pub struct DecryptedData {
     key: SecretKey,
-    iv: IV,
+    iv: Vec<u8>,
     encrypted: EncryptedData,
 }
 
 impl DecryptedData {
-    pub fn new(key: SecretKey, iv: IV, encrypted: EncryptedData) -> Self {
+    pub fn new(key: SecretKey, iv: Vec<u8>, encrypted: EncryptedData) -> Self {
         DecryptedData { key, iv, encrypted }
     }
 
     pub fn decrypt(&self) -> Result<Reveal, CommitRevealError> {
         let mut decrypted = self.encrypted.clone();
         let iv = aead::generate_iv(self.iv.as_slice());
-        aead::decrypt(&iv, self.key.get(), decrypted.as_mut())
+        aead::decrypt(&iv, &self.key, decrypted.as_mut())
             .map_err(|_| CommitRevealError::DecryptionRejected)?;
 
         Ok(decrypted)
@@ -87,8 +94,7 @@ pub struct CommitRevealManager<S> {
 pub struct UnSet;
 
 /// Setup material for initializing the aes-gcm key and iv to encrypt the data.
-/// Ensure that the encoded metadata is at least 96 bit in size.
-/// Every commitment is binded to a nonce, to ensure the keymaterial changes.
+/// The key is derived using the commit_id, which is a nonce, that identifies the commitment.
 pub struct Setup<CommitMetadata> {
     commit_id: CommitId,
     meta: CommitMetadata,
@@ -161,7 +167,7 @@ impl CommitRevealManager<UnSet> {
 
         Ok(RevealProof {
             commit_id,
-            secret: SecretKey(secret.get_ownership()),
+            secret: secret.get_ownership().to_vec(),
         })
     }
 }
@@ -197,7 +203,7 @@ impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
         Ok(Commit {
             id: self.state.setup_material.commit_id,
             data: (data, self.state.setup_material.meta),
-            iv,
+            iv: iv.to_vec(),
         })
     }
 }
