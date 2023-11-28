@@ -10,6 +10,7 @@ use primitives::commit_reveal::{
 use sp_application_crypto::KeyTypeId;
 use sp_application_crypto::RuntimeAppPublic;
 use sp_core::Get;
+use sp_std::vec::Vec;
 
 impl<T: Config> TiSparkManager for Pallet<T> {
     type Metadata = T::CommitMetadata;
