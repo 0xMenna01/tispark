@@ -37,7 +37,6 @@ impl Random {
         }
 
         #[cfg(not(feature = "std"))]
-        #[cfg(feature = "phat_contract")]
         {
             pink_extension::ext().getrandom(length)
         }
@@ -45,11 +44,8 @@ impl Random {
 }
 
 /// Hashing type
-#[cfg(feature = "phat_contract")]
+
 pub type CryptoHasher = ContractBlakeTwo256;
-// If not phat_contract
-#[cfg(not(feature = "phat_contract"))]
-pub type CryptoHasher = Blake2Hasher;
 
 /// Custom hash implementations to be compatible with ink! smart contracts
 #[derive(PartialEq, Eq, Clone)]
