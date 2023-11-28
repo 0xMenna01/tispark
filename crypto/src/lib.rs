@@ -8,6 +8,7 @@ extern crate std;
 pub mod aead;
 pub mod key_derive;
 
+use alloc::vec::Vec;
 use ink_env::hash::{Blake2x256 as InkBlakeTwo256, CryptoHash};
 use sp_core::{Blake2Hasher, Hasher};
 
