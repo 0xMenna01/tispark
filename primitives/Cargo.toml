@@ -34,9 +34,6 @@ std = [
 full_crypto = [
 	"crypto/full_crypto",
 ]
-phat_contract = [
-	"crypto/phat_contract",
-]
 runtime-benchmarks = [
 	"sp-runtime/runtime-benchmarks",
 ]
