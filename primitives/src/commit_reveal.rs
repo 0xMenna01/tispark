@@ -6,7 +6,7 @@ use crypto::{
     CryptoError, CryptoHasher, Random,
 };
 use scale_info::TypeInfo;
-use sp_core::{Hasher, H256};
+use sp_core::H256;
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
@@ -142,7 +142,7 @@ impl CommitRevealManager<UnSet> {
             addons: query,
             entropy: fixed_entropy,
         };
-        let commit_id = CryptoHasher::hash(&nonce.encode());
+        let commit_id: H256 = CryptoHasher::hash(&nonce.encode()).into();
         // derive the key using the commitment id
         let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
         // there is a timing window in which this iv will repeat, depends on the calling blockchain system's block time

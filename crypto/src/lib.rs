@@ -9,8 +9,7 @@ pub mod aead;
 pub mod key_derive;
 
 use alloc::vec::Vec;
-use ink_env::hash::{Blake2x256 as InkBlakeTwo256, CryptoHash};
-use sp_core::{Blake2Hasher, Hasher};
+use ink_env::hash::{Blake2x256, CryptoHash};
 
 #[derive(Debug)]
 pub enum CryptoError {
@@ -37,33 +36,19 @@ impl Random {
         }
 
         #[cfg(not(feature = "std"))]
-        #[cfg(feature = "phat_contract")]
         {
             pink_extension::ext().getrandom(length)
         }
     }
 }
 
-/// Hashing type
-#[cfg(feature = "phat_contract")]
-pub type CryptoHasher = ContractBlakeTwo256;
-// If not phat_contract
-#[cfg(not(feature = "phat_contract"))]
-pub type CryptoHasher = Blake2Hasher;
+const HASH_LENGTH: usize = 32;
+pub struct CryptoHasher(());
 
-/// Custom hash implementations to be compatible with ink! smart contracts
-#[derive(PartialEq, Eq, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ContractBlakeTwo256;
-
-impl Hasher for ContractBlakeTwo256 {
-    type Out = sp_core::H256;
-    type StdHasher = hash256_std_hasher::Hash256StdHasher;
-    const LENGTH: usize = 32;
-
-    fn hash(s: &[u8]) -> Self::Out {
-        let mut output = [0_u8; Self::LENGTH];
-        InkBlakeTwo256::hash(s, &mut output);
+impl CryptoHasher {
+    pub fn hash(data: &[u8]) -> [u8; HASH_LENGTH] {
+        let mut output = [0_u8; HASH_LENGTH];
+        Blake2x256::hash(data, &mut output);
         output.into()
     }
 }
