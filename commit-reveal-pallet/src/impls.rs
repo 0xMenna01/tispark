@@ -2,7 +2,7 @@ use crate::{
     types::{CommitmentRequest, TiSparkCommitment, TiSparkManager},
     Config, Error, Event, Pallet, PhatContract, PhatContractCommitment,
 };
-use parity_scale_codec::Encode;
+use parity_scale_codec::{Decode, Encode};
 use primitives::commit_reveal::{
     Commit, CommitId, CommitRevealError, Commitment, DecryptedData, EncryptedData, Reveal,
     RevealProof,
@@ -20,32 +20,25 @@ impl<T: Config> TiSparkManager for Pallet<T> {
     fn commit_from_request(
         request: CommitmentRequest<Self::Metadata, Self::Signature>,
     ) -> Result<(), Self::Error> {
-        let phat_contract_id = PhatContract::<T>::get();
-        if let Some(phat_key) = phat_contract_id {
-            let signature_valid = request.commit.using_encoded(|encoded_commit| {
-                phat_key.verify(&encoded_commit, &request.signature)
-            });
+        let plain_metadata = request.commit.get_metadata();
 
-            if !signature_valid {
-                return Err(Error::<T>::InvalidSignature.into());
-            }
+        // We take the commitment with the encoded metadata, since the phat contract has signed that information
+        let commitment = request.commit.with_encoded_metadata();
 
-            let metadata = request.commit.get_metadata();
-            let commit_id = request.commit.get_id();
+        verify_contract_signature::<T>(&commitment, &request.signature)?;
 
-            Self::commit(request.commit).map_err(|_| Error::<T>::InvalidCommitment)?;
+        let commit_id = commitment.get_id();
 
-            let storage_key = Self::commitment_storage_key_for(&commit_id);
-            Self::deposit_event(Event::ValueCommitted {
-                id: commit_id,
-                metadata,
-                storage_key,
-            });
+        Self::commit(commitment).map_err(|_| Error::<T>::InvalidCommitment)?;
 
-            Ok(())
-        } else {
-            Err(Error::<T>::PhatContractNotInititialized.into())
-        }
+        let storage_key = Self::commitment_storage_key_for(&commit_id);
+        Self::deposit_event(Event::ValueCommitted {
+            id: commit_id,
+            metadata: plain_metadata,
+            storage_key,
+        });
+
+        Ok(())
     }
 
     fn reveal_from_proof(proof: RevealProof) -> Result<(), Self::Error> {
@@ -62,20 +55,52 @@ impl<T: Config> TiSparkManager for Pallet<T> {
     fn commitment_storage_key_for(id: &CommitId) -> Vec<u8> {
         PhatContractCommitment::<T>::hashed_key_for(id)
     }
+
+    fn metadata_for_commit(commit_id: &CommitId) -> Result<Self::Metadata, Self::Error> {
+        if let Some(commitment) = PhatContractCommitment::<T>::get(commit_id) {
+            let metadata = commitment.get_metadata();
+
+            let metadata: T::CommitMetadata = Decode::decode(&mut &metadata[..])
+                .map_err(|_| Error::<T>::DecodingMetadataError)?;
+            Ok(metadata)
+        } else {
+            Err(Error::<T>::InvalidCommitment.into())
+        }
+    }
 }
 
-impl<T: Config> Commitment<EncryptedData, T::CommitMetadata> for Pallet<T> {
+fn verify_contract_signature<T: Config>(
+    commit: &Commit<Vec<u8>>,
+    signature: &<T::PhatContractId as RuntimeAppPublic>::Signature,
+) -> Result<(), Error<T>> {
+    let phat_contract_id = PhatContract::<T>::get();
+    if let Some(phat_key) = phat_contract_id {
+        let signature_valid =
+            commit.using_encoded(|encoded_commit| phat_key.verify(&encoded_commit, signature));
+
+        if !signature_valid {
+            return Err(Error::<T>::InvalidSignature.into());
+        }
+
+        Ok(())
+    } else {
+        Err(Error::<T>::PhatContractNotInititialized.into())
+    }
+}
+
+impl<T: Config> Commitment<EncryptedData, Vec<u8>> for Pallet<T> {
     /// Commits an encrypted SCALE encoded value using AES-GCM 256 associated to the metadata.
     /// It contains the authenticated and encrypted version of the plaintext.
-    fn commit(value: Commit<T::CommitMetadata>) -> Result<(), CommitRevealError> {
+    fn commit(value: Commit<Vec<u8>>) -> Result<(), CommitRevealError> {
         let commit_id = value.get_id();
         if let Some(_) = PhatContractCommitment::<T>::get(&commit_id) {
             // commitment with the given id already exists
             Err(CommitRevealError::AlreadyCommitted)
         } else {
             let (commit, iv) = value.get_commitment();
-            let commitment =
-                TiSparkCommitment::new(commit, &iv).map_err(|_| CommitRevealError::CommitError)?;
+            let metadata = value.get_metadata();
+            let commitment = TiSparkCommitment::new(commit, &iv, metadata)
+                .map_err(|_| CommitRevealError::CommitError)?;
             // Insert new commitment into storage
             PhatContractCommitment::<T>::insert(&commit_id, commitment);
 

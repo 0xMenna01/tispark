@@ -38,6 +38,10 @@ pub mod pallet {
         #[pallet::constant]
         type MaxCommitmentSize: Get<u32>;
 
+        /// The maximum length for the encoded metadata
+        #[pallet::constant]
+        type MaxMetadataSize: Get<u32>;
+
         /// The length of the chipher key
         #[pallet::constant]
         type KeyBytes: Get<u32>;
@@ -46,7 +50,7 @@ pub mod pallet {
         #[pallet::constant]
         type IVLen: Get<u32>;
 
-        type CommitMetadata: Parameter;
+        type CommitMetadata: Parameter + MaxEncodedLen;
     }
 
     #[pallet::event]
@@ -80,6 +84,8 @@ pub mod pallet {
         PhatContractNotInititialized,
         /// Invalid Length
         InvalidBytesLength,
+        /// Decode MetadataError
+        DecodingMetadataError,
     }
 
     #[pallet::storage]
@@ -95,7 +101,7 @@ pub mod pallet {
         _,
         Twox64Concat,
         CommitId,
-        TiSparkCommitment<T::MaxCommitmentSize, T::IVLen, T::KeyBytes>,
+        TiSparkCommitment<T::MaxCommitmentSize, T::IVLen, T::KeyBytes, T::MaxMetadataSize>,
         OptionQuery,
     >;
 

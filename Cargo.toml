@@ -6,6 +6,7 @@ members = [
     "primitives",
     "light-client",
     "commit-reveal-pallet",
+    "contracts/tispark-client",
 ]
 
 [profile.release]

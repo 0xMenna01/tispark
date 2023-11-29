@@ -20,7 +20,11 @@ pub trait TiSparkManager {
     fn reveal_from_proof(proof: RevealProof) -> Result<(), Self::Error>;
 
     fn commitment_storage_key_for(id: &CommitId) -> Vec<u8>;
+
+    fn metadata_for_commit(commit_id: &CommitId) -> Result<Self::Metadata, Self::Error>;
 }
+
+pub type EncodedMetadata<MaxMetaLen> = BoundedVec<u8, MaxMetaLen>;
 
 #[derive(Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct CommitmentRequest<Metadata, Signature> {
@@ -34,7 +38,10 @@ pub type PhatContractOf<T> = <T as Config>::PhatContractId;
 /// Commitment
 #[derive(Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 #[scale_info(skip_type_params(MaxCommitmentSize))]
-pub struct SecureCommitment<MaxCommitmentSize: Get<u32>>(BoundedVec<u8, MaxCommitmentSize>);
+pub struct SecureCommitment<MaxCommitmentSize: Get<u32>, Metadata> {
+    commit: BoundedVec<u8, MaxCommitmentSize>,
+    metadata: Metadata,
+}
 
 /// Initialization Vector associated to commitment
 #[derive(Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
@@ -48,29 +55,37 @@ pub struct KeyProof<KeyLen: Get<u32>>(BoundedVec<u8, KeyLen>);
 
 /// TISPARK Commitment
 #[derive(Encode, MaxEncodedLen, Decode, Default, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-#[scale_info(skip_type_params(MaxCommitmentLen, IVLen, KeyLen))]
-pub struct TiSparkCommitment<MaxCommitmentLen, IVLen, KeyLen>
+#[scale_info(skip_type_params(MaxCommitmentLen, IVLen, KeyLen, MetadataLen))]
+pub struct TiSparkCommitment<MaxCommitmentLen, IVLen, KeyLen, MetadataLen>
 where
     MaxCommitmentLen: Get<u32>,
     IVLen: Get<u32>,
     KeyLen: Get<u32>,
+    MetadataLen: Get<u32>,
 {
-    commit: SecureCommitment<MaxCommitmentLen>,
+    commit: SecureCommitment<MaxCommitmentLen, EncodedMetadata<MetadataLen>>,
     iv: SecureIV<IVLen>,
     proof: KeyProof<KeyLen>,
 }
 
-impl<MaxCommitmentLen, IVLen, KeyLen> TiSparkCommitment<MaxCommitmentLen, IVLen, KeyLen>
+impl<MaxCommitmentLen, IVLen, KeyLen, MetadataLen>
+    TiSparkCommitment<MaxCommitmentLen, IVLen, KeyLen, MetadataLen>
 where
     MaxCommitmentLen: Get<u32>,
     IVLen: Get<u32>,
     KeyLen: Get<u32>,
+    MetadataLen: Get<u32>,
 {
-    pub fn new(commitment: Vec<u8>, iv: &[u8]) -> Result<Self, InvalidBytesLength> {
+    pub fn new(
+        commitment: Vec<u8>,
+        iv: &[u8],
+        metadata: Vec<u8>,
+    ) -> Result<Self, InvalidBytesLength> {
         Ok(Self {
-            commit: SecureCommitment(
-                MyBoundedVec::<u8, MaxCommitmentLen>::try_from(commitment)?.get(),
-            ),
+            commit: SecureCommitment {
+                commit: MyBoundedVec::<u8, MaxCommitmentLen>::try_from(commitment)?.get(),
+                metadata: MyBoundedVec::<u8, MetadataLen>::try_from(metadata)?.get(),
+            },
             iv: SecureIV(MyBoundedVec::<u8, IVLen>::try_from(iv.to_vec())?.get()),
             proof: KeyProof(BoundedVec::<u8, KeyLen>::new()),
         })
@@ -81,7 +96,11 @@ where
     }
 
     pub fn get_data(&self) -> Vec<u8> {
-        self.commit.0.to_vec()
+        self.commit.commit.to_vec()
+    }
+
+    pub fn get_metadata(&self) -> Vec<u8> {
+        self.commit.metadata.to_vec()
     }
 
     pub fn has_proof(&self) -> bool {

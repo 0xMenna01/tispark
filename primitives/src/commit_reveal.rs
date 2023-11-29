@@ -32,6 +32,16 @@ pub struct Commit<Metadata> {
     iv: Vec<u8>,
 }
 
+impl<Metadata: Encode> Commit<Metadata> {
+    pub fn with_encoded_metadata(self) -> Commit<Vec<u8>> {
+        Commit {
+            id: self.id,
+            data: (self.data.0, self.data.1.encode()),
+            iv: self.iv,
+        }
+    }
+}
+
 impl<Metadata: Clone> Commit<Metadata> {
     pub fn get_id(&self) -> CommitId {
         self.id.clone()
@@ -109,14 +119,23 @@ pub struct SchemeReady<PlainText: Encode, CommitMetadata> {
 
 #[derive(Encode)]
 pub struct QueryHeight {
-    pub height: u32,
-    pub timestamp: u64,
+    height: u32,
+    timestamp: u64,
 }
 
 #[derive(Encode)]
 pub struct QueryMetadata<Metadata> {
     height: QueryHeight,
     metadata: Metadata,
+}
+
+impl<Metadata> QueryMetadata<Metadata> {
+    pub fn new(height: u32, timestamp: u64, metadata: Metadata) -> Self {
+        Self {
+            height: QueryHeight { height, timestamp },
+            metadata,
+        }
+    }
 }
 
 #[derive(Encode)]
