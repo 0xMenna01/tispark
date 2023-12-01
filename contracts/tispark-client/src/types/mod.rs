@@ -6,7 +6,6 @@ use core::fmt::Debug;
 use ink::primitives::AccountId;
 use scale::{Decode, Encode};
 
-pub mod auth;
 pub mod commitment;
 pub mod consensus;
 pub mod message;
@@ -43,6 +42,7 @@ pub enum ContractError {
     UntrustedAuthoritiesError,
     GameAlreadyExists,
     InvalidGame,
+    InvalidConsensusProof,
 }
 
 pub type VersionNumber = u32;

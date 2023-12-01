@@ -1,13 +1,12 @@
 use crate::types::Result as ContractResult;
+use aleph_consensus_client::{ConsensusContractResult, StateTrieResponseProof};
 use alloc::vec::Vec;
 use crypto::Twox64Concat;
 use frame_support::traits::ConstU32;
-use light_client::{GetResponse, GetSingleState, Hash};
+use ink::env::call::{ExecutionInput, Selector};
 use scale::{Decode, Encode};
-use tispark_primitives::{
-    commit_reveal::{CommitId, SecretKey},
-    state_proofs::GetResponseProof,
-};
+use tispark_primitives::commit_reveal::SecretKey;
+use utils::ContractRef;
 
 use super::ContractError;
 
@@ -19,6 +18,18 @@ const MAX_METADATA_LEN: u32 = 512 / 8;
 
 /// commit (encrypted data) and nonce (iv)
 pub type Commitment = (Vec<u8>, Vec<u8>);
+
+pub fn verify_state(
+    contract: &ContractRef,
+    state: StateTrieResponseProof,
+) -> ConsensusContractResult<Vec<u8>> {
+    let exec = ExecutionInput::new(Selector::new(ink::selector_bytes!(
+        "StateTrieManager::verify_state"
+    )))
+    .push_arg(state);
+
+    contract.query(exec)
+}
 
 #[derive(Debug, Encode, Decode, Clone, PartialEq, Eq)]
 pub struct ResultCommitment {
@@ -44,48 +55,16 @@ impl ResultCommitment {
     }
 }
 
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct GetCommitmentResponseProof {
-    height: u64,
-    commit: Hash,
-    proof: GetResponseProof,
-}
+pub struct CommitmentStateDecoder;
 
-impl GetCommitmentResponseProof {
-    pub fn response(&self) -> GetResponse {
-        GetResponse(self.proof.clone())
-    }
-
-    pub fn commit(&self) -> Hash {
-        self.commit.clone()
-    }
-
-    pub fn new(height: u64, commit: Hash, proof: GetResponseProof) -> ContractResult<Self> {
-        let commitment_response = GetCommitmentResponseProof {
-            height,
-            commit,
-            proof,
-        };
-        if commitment_response.response().verify_key_uniquness() {
-            Ok(commitment_response)
-        } else {
-            Err(ContractError::InvalidKeysError)
-        }
-    }
-
-    pub fn verify_commitment(&self) -> ContractResult<ResultCommitment> {
-        let data = self
-            .response()
-            .verify_state()
-            .map_err(|_| ContractError::CommitmentStateError)?;
-
+impl CommitmentStateDecoder {
+    pub fn decode(encoded: Vec<u8>) -> ContractResult<ResultCommitment> {
         let commitment: commit_reveal_pallet::types::TiSparkCommitment<
             Len<MAX_LEN_COMMITMENT>,
             Len<LEN_IV>,
             Len<LEN_ALGO>,
             Len<MAX_METADATA_LEN>,
-        > = Decode::decode(&mut &data[..]).map_err(|_| ContractError::DecodeCommitStateError)?;
+        > = Decode::decode(&mut &encoded[..]).map_err(|_| ContractError::DecodeCommitStateError)?;
 
         Ok(ResultCommitment::new(
             (commitment.get_data(), commitment.get_iv()),

@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 extern crate alloc;
 
-mod contract_ref;
 mod mocks;
+pub mod tispark_client_ref;
 mod traits;
 mod types;
 
@@ -15,11 +15,11 @@ use pink_extension as pink;
 mod tispark_client {
     use super::pink;
     use crate::{
-        traits::{CommitRevealContractManager, FinalityError, FinalityGadget},
+        consensus,
+        state::{self, CommitmentStateDecoder},
+        traits::CommitRevealContractManager,
         types::{
-            auth::AccessControl,
             commitment::{ContractCommitment, ContractCommitmentBuilder},
-            consensus::{AuthorityId, ConsensusProofHandlerBuilder},
             message::{
                 CommitmentRequest, ContractPubKey, ContractSecretKey, ResponseStateProofRequest,
                 RevealResponse, RevealResultRequest,
@@ -33,6 +33,10 @@ mod tispark_client {
     use pink::PinkEnvironment;
     use scale::Encode;
     use tispark_primitives::commit_reveal::{CommitRevealManager, DecryptedData, QueryMetadata};
+    use utils::{
+        types::{AccessControl, AuthorityId, ContracId, SudoAccount},
+        ContractRef as ConsensusClientRef,
+    };
 
     #[ink(storage)]
     pub struct TiSparkClient {
@@ -40,8 +44,8 @@ mod tispark_client {
         sign_material: Lazy<SigningMaterial>,
         /// Raw secret to compute the AES-GCM secret
         commitment_key: Lazy<CommitmentKey>,
-        /// List of authorities for the consensus client
-        consensus_auth: ConsensusAuthorities,
+        /// Contract reference of the consensus client
+        consensus_client: ConsensusClientRef,
         /// Sudo account for emergency operations
         sudo: SudoAccount,
         /// Registered services
@@ -79,15 +83,9 @@ mod tispark_client {
         next_authorities: Option<Vec<AuthorityId>>,
     }
 
-    #[derive(Debug)]
-    #[ink::storage_item]
-    pub struct SudoAccount {
-        account: Option<AuthorityId>,
-    }
-
     impl TiSparkClient {
         #[ink(constructor)]
-        pub fn new() -> Self {
+        pub fn new(consensus_client_id: ContracId) -> Self {
             // contract keyring material to sign and verify messages.
             let (version, secret_key, pub_key) =
                 KeyringVersion::build_keyring_material(Versioned::Signing);
@@ -108,22 +106,14 @@ mod tispark_client {
             // Set sudo account for initializing later on the consensus client authorities
             // It can be removed at later stages for a permissionless setting
             let sudo = pink::env().caller();
-            let sudo = SudoAccount {
-                account: Some(sudo),
-            };
-
-            // Set an empty set of authorities
-            let consensus_auth = ConsensusAuthorities {
-                authorities: Default::default(),
-                next_authorities: Default::default(),
-            };
+            let sudo = SudoAccount::new(Some(sudo));
 
             let services = Mapping::new();
 
             Self {
                 sign_material,
                 commitment_key,
-                consensus_auth,
+                consensus_client: ConsensusClientRef::new(consensus_client_id),
                 sudo,
                 services,
             }
@@ -139,13 +129,6 @@ mod tispark_client {
             self.commitment_key
                 .get()
                 .expect("The commitment key is expected to be initilized")
-        }
-
-        // Once it is permissionless modify this because the exception can be triggered
-        fn sudo(&self) -> AccountId {
-            self.sudo
-                .account
-                .expect("The sudo account is expected to be initialized")
         }
 
         #[ink(message)]
@@ -170,9 +153,10 @@ mod tispark_client {
         }
 
         fn ensure_owner(&self) -> ContractResult<()> {
-            AccessControl::new(self.sudo.account)
+            AccessControl::new(self.sudo.get())
                 .caller(pink::env().caller())
                 .verify()
+                .map_err(|_| ContractError::BadOrigin)
         }
 
         fn ensure_service_contract(&self, service: ServiceId) -> ContractResult<()> {
@@ -181,6 +165,7 @@ mod tispark_client {
             AccessControl::new(Some(contract))
                 .caller(pink::env().caller())
                 .verify()
+                .map_err(|_| ContractError::BadOrigin)
         }
 
         fn ensure_service_exists(&self, service: ServiceId) -> ContractResult<ContractServiceId> {
@@ -189,100 +174,6 @@ mod tispark_client {
             } else {
                 Err(ContractError::InvalidGame)
             }
-        }
-    }
-
-    impl FinalityGadget for TiSparkClient {
-        /// Initialize a permissionless setting for the consensus client, by rotating a committee of authorities
-        // Not implemeneted yet, we are still in a permissioned setting.
-        #[ink(message)]
-        fn initialize_permissionless_authorities(
-            &mut self,
-            _next_authorities: Vec<AuthorityId>,
-        ) -> Result<(), FinalityError> {
-            Ok(())
-        }
-
-        /// Initialize a permissioned set of authorities for the consensus client
-        #[ink(message)]
-        fn initialize_permissioned_authorities(
-            &mut self,
-            authorities: Vec<AuthorityId>,
-        ) -> Result<(), FinalityError> {
-            self.ensure_owner()
-                .map_err(|_| FinalityError::PermissionDenied)?;
-
-            let mut auth = authorities;
-            if self.consensus_auth.authorities.is_empty() {
-                self.consensus_auth.authorities.append(&mut auth);
-                Ok(())
-            } else {
-                Err(FinalityError::AuthoritiesAlreadyInitialized)
-            }
-        }
-
-        /// Updates the list of authorities based on next authorities already stored and stores the new next authorities within a proof.
-        // Not implemeneted yet, we are still in a permissioned setting.
-        #[ink(message)]
-        fn update_authorities(
-            &mut self,
-            _next_authorities: Vec<AuthorityId>,
-            _proof: light_client::GetResponse,
-        ) -> Result<(), FinalityError> {
-            Ok(())
-        }
-
-        /// Set the next emergency finalizer account (aka sudo)
-        #[ink(message)]
-        fn update_emergency_finalizer_account(
-            &mut self,
-            emergency_finalizer: AuthorityId,
-        ) -> Result<(), FinalityError> {
-            self.ensure_owner()
-                .map_err(|_| FinalityError::PermissionDenied)?;
-
-            self.sudo.account = Some(emergency_finalizer);
-            Ok(())
-        }
-
-        /// Returns the current session, if necessary.
-        // Returns `None` because we are still in a permissioned setting
-        #[ink(message)]
-        fn current_session(&self) -> Option<light_client::SessionIndex> {
-            None
-        }
-
-        /// Returns the current session, if necessary.
-        #[ink(message)]
-        fn authorities(&self) -> Option<Vec<AccountId>> {
-            let auth = self.consensus_auth.authorities.clone();
-            if auth.is_empty() {
-                None
-            } else {
-                Some(auth)
-            }
-        }
-
-        /// Checks whether the chain is in a permissionless setting
-        #[ink(message)]
-        fn is_permissionless(&self) -> bool {
-            self.consensus_auth.next_authorities.is_some()
-        }
-
-        /// Retuns current sudo account. Returns `None` if there isnt't
-        #[ink(message)]
-        fn sudo(&self) -> Option<AuthorityId> {
-            self.sudo.account
-        }
-
-        /// Removes sudo account, if some.
-        #[ink(message)]
-        fn remove_sudo(&mut self) -> Result<(), FinalityError> {
-            self.ensure_owner()
-                .map_err(|_| FinalityError::PermissionDenied)?;
-
-            self.sudo.account = None;
-            Ok(())
         }
     }
 
@@ -350,26 +241,15 @@ mod tispark_client {
             let request = RevealResultRequest::try_from(request)
                 .map_err(|_| ContractError::InvalidInputFormat)?;
 
-            let sudo = self.sudo();
-
             // Verify the consensus proof
-            let state_client_handler = ConsensusProofHandlerBuilder::default()
-                .setup_client(
-                    self.consensus_auth.authorities.clone(),
-                    request.proof().untrusted_auth,
-                    sudo,
-                )?
-                .consensus_proof(request.proof())
-                .build();
-
-            state_client_handler.verify_consensus_state()?;
+            consensus::verify_consensus(&self.consensus_client, request.proof())
+                .map_err(|_| ContractError::InvalidConsensusProof)?;
 
             // Verify a (key, value) pair within a state proof and a state commitment (state root hash)
             // The state commitment has been validated through the consensus state proof that includes the state root hash
-            let res = request
-                .response()
-                .verify_commitment()
+            let res = state::verify_state(&self.consensus_client, request.response())
                 .map_err(|_| ContractError::ConsensusClientInvalidStateProof)?;
+            let res = CommitmentStateDecoder::decode(res)?;
 
             let commitment_key = self.commitment_key();
 
@@ -390,9 +270,6 @@ mod tispark_client {
         }
     }
 
-    /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
-    /// module and test functions are marked with a `#[test]` attribute.
-    /// The below code is technically just normal Rust code.
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -405,22 +282,16 @@ mod tispark_client {
         };
         use casino_types::{Bet, BetResult, CommitMetadata, GameRandom, Randomness};
         use ink::primitives::AccountId;
-        use pink::chain_extension::mock::mock_getrandom;
-        use rand::Rng;
-        use scale::Decode;
 
-        fn init_contract_with_randomness() -> (AccountId, ConfidentialBetManager) {
+        fn init_contract_with_randomness() -> (AccountId, TiSparkClient) {
             (
                 PhatContractEnv::setup_with_randomness(),
-                ConfidentialBetManager::new(),
+                TiSparkClient::new(),
             )
         }
 
-        fn init_contract_no_randomness() -> (AccountId, ConfidentialBetManager) {
-            (
-                PhatContractEnv::setup_no_randomness(),
-                ConfidentialBetManager::new(),
-            )
+        fn init_contract_no_randomness() -> (AccountId, TiSparkClient) {
+            (PhatContractEnv::setup_no_randomness(), TiSparkClient::new())
         }
 
         #[ink::test]
@@ -428,38 +299,10 @@ mod tispark_client {
             let (_, contract) = init_contract_no_randomness();
             PhatContractEnv::setup_randomness_generation();
 
-            #[derive(GameRandom, Encode, Decode, Clone, Eq, PartialEq, Copy)]
-            enum DiceGame {
-                One,
-                Two,
-                Three,
-                Four,
-                Five,
-                Six,
-            }
+            let encoded_result = [0_u8; 8];
+            let encoded_meta = [1_u8; 4];
 
-            #[derive(Encode, Decode, Clone, Eq, PartialEq, Copy)]
-            struct DiceBet {
-                data: DiceGame,
-            }
-
-            #[derive(Encode, Decode, Clone, Eq, PartialEq, Copy)]
-            struct DiceOutcome {
-                result: DiceGame,
-            }
-
-            let bet = Bet::new(DiceBet {
-                data: DiceGame::Three,
-            });
-            let result = BetResult::new(
-                bet,
-                DiceOutcome {
-                    result: Randomness::new().gen(),
-                },
-            );
-            let bet_meta = CommitMetadata::new(MockAccount::mock_default(), 100, 0);
-
-            let request = BetCommitmentRequest::new(result, bet_meta);
+            let request = CommitmentRequest::new(encoded_result.to_vec(), encoded_meta.to_vec(), 0);
 
             assert!(contract.commit(request).is_ok())
         }

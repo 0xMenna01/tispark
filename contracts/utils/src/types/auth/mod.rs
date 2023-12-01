@@ -1,6 +1,6 @@
 use ink::primitives::AccountId;
 
-use super::{consensus::AuthorityId, ContractError, Result as ContractResult};
+use super::AuthorityId;
 
 pub struct NoControl;
 pub struct Control(AccountId);
@@ -32,12 +32,14 @@ impl AccessControl<Control> {
     }
 }
 
+pub struct PermissionDeined;
+
 impl AccessControl<ControlVerify> {
-    pub fn verify(&self) -> ContractResult<()> {
+    pub fn verify(&self) -> Result<(), PermissionDeined> {
         if self.phase.control == self.phase.verify {
             Ok(())
         } else {
-            Err(ContractError::BadOrigin)
+            Err(PermissionDeined)
         }
     }
 }

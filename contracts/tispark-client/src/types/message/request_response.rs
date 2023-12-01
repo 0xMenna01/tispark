@@ -1,22 +1,15 @@
-use crate::{
-    state,
-    types::{
-        consensus::{AuthorityId, ConsensusProof, ConsensusState},
-        state::GetCommitmentResponseProof,
-        ContractError, ContractResult,
-    },
-    ServiceId,
-};
+use crate::{state, ServiceId};
+use aleph_consensus_client::{ConsensusProof, ConsensusState, StateTrieResponseProof};
 use alloc::{string::String, vec, vec::Vec};
 use hex::FromHex;
-use light_client::{consensus::AlephLogs, BlockNumber, GetResponse, GetSingleState, Hash};
+use light_client::consensus::AlephLogs;
+use light_client::Hash;
 use scale::{Decode, Encode};
 use tispark_primitives::{
-    commit_reveal::RevealProof,
+    commit_reveal::{CommitId, RevealProof},
     state_proofs::{GetResponseProof, HashAlgorithm, Proof, StateCommitment, SubstrateStateProof},
 };
-
-use super::{ContractSigType, ContractSignature, SigningData};
+use utils::types::AuthorityId;
 
 pub enum Error {
     ParamsConversionError,
@@ -90,12 +83,8 @@ impl TryFrom<ResponseStateProofRequest> for RevealResultRequest {
             commit_id.as_bytes(),
         )];
 
-        let proof_request = GetCommitmentResponseProof::new(
-            value.meta.height,
-            commit_id,
-            GetResponseProof::new(&keys, &root, &proof),
-        )
-        .unwrap();
+        let proof_request =
+            StateTrieResponseProof::new(GetResponseProof::new(&keys, &root, &proof)).unwrap();
 
         // 2. Build a consensus proof
         let state = ConsensusState {
@@ -112,7 +101,7 @@ impl TryFrom<ResponseStateProofRequest> for RevealResultRequest {
             untrusted_auth: value.consensus_proof.untrusted_authorites,
         };
 
-        Ok(Self::new(proof_request, consensus_proof))
+        Ok(Self::new(proof_request, consensus_proof, commit_id))
     }
 }
 
@@ -125,9 +114,9 @@ pub struct StateRequestMetadata {
 }
 
 impl StateRequestMetadata {
-    pub fn commit_hash(&self) -> Result<Hash, Error> {
+    pub fn commit_hash(&self) -> Result<light_client::Hash, Error> {
         let commit_id = Vec::from_hex(&self.commit_id).map_err(|_| Error::InvalidHash)?;
-        Ok(Hash::from_slice(&commit_id))
+        Ok(light_client::Hash::from_slice(&commit_id))
     }
 }
 
@@ -152,7 +141,7 @@ impl ConsensusProofParams {
         Ok(Hash::from_slice(&state_root))
     }
 
-    pub fn block(&self) -> BlockNumber {
+    pub fn block(&self) -> u32 {
         self.consensus_state.block.clone()
     }
 
@@ -179,7 +168,7 @@ impl ConsensusProofParams {
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct ConsensusStateParams {
-    pub block: BlockNumber,
+    pub block: u32,
     pub extrinsics_root: String,
     pub state_root: String,
     pub parent_hash: String,
@@ -192,82 +181,30 @@ pub struct ConsensusStateParams {
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct RevealResultRequest {
-    response: GetCommitmentResponseProof,
+    response: StateTrieResponseProof,
     proof: ConsensusProof,
+    commit: CommitId,
 }
 
 impl RevealResultRequest {
-    pub fn new(response: GetCommitmentResponseProof, proof: ConsensusProof) -> Self {
-        Self { response, proof }
+    pub fn new(response: StateTrieResponseProof, proof: ConsensusProof, commit: CommitId) -> Self {
+        Self {
+            response,
+            proof,
+            commit,
+        }
     }
 
     pub fn proof(&self) -> ConsensusProof {
         self.proof.clone()
     }
 
-    pub fn response(&self) -> GetCommitmentResponseProof {
+    pub fn response(&self) -> StateTrieResponseProof {
         self.response.clone()
     }
 
     pub fn commmit(&self) -> Hash {
-        self.response.commit()
-    }
-}
-
-#[derive(Encode, Decode)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct StateResponseProof {
-    data: Vec<u8>,
-    signature: ContractSignature,
-}
-
-impl StateResponseProof {
-    pub fn new(secret_key: &[u8], data: &[u8]) -> Self {
-        let signature = ContractSignature::from(SigningData::new(
-            secret_key.to_vec(),
-            data.to_vec(),
-            ContractSigType::Sr25519,
-        ));
-
-        Self {
-            data: data.to_vec(),
-            signature,
-        }
-    }
-
-    pub fn signature(&self) -> Vec<u8> {
-        self.signature.signature()
-    }
-
-    pub fn data(&self) -> Vec<u8> {
-        self.data.clone()
-    }
-}
-
-#[derive(Encode, Decode)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct StateVerifyRequest {
-    timestamp: u64,
-    response_proof: GetResponse,
-}
-
-impl StateVerifyRequest {
-    pub fn new(timestamp: u64, proof: GetResponseProof) -> Self {
-        let response_proof = GetResponse(proof);
-        Self {
-            timestamp,
-            response_proof,
-        }
-    }
-
-    pub fn timestamp(&self) -> u64 {
-        self.timestamp
-    }
-
-    pub fn get_verify(&self) -> ContractResult<Vec<u8>> {
-        self.response_proof
-            .verify_state()
-            .map_err(|_| ContractError::StateVerificationError)
+        self.commit.clone()
     }
 }
 

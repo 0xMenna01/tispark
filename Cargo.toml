@@ -5,8 +5,10 @@ members = [
     "crypto",
     "primitives",
     "light-client",
+    "contracts/aleph-consensus-client",
     "commit-reveal-pallet",
     "contracts/tispark-client",
+    "contracts/utils",
 ]
 
 [profile.release]

@@ -1,25 +1,19 @@
 [package]
-name = "tispark_manager"
+name = "utils"
 version = "0.1.0"
-authors = ["0xMenna <emanuele.cryptdev@gmail.com>"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ink = { version = "4", default-features = false }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
-
-pink-extension = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }
-tispark-client = { path = "../tispark-client", default-features = false, features = ["ink-as-dependency"] }
-
-[dev-dependencies]
-pink-extension-runtime = "0.4"
-
-[lib]
-name = "demo_game"
-path = "lib.rs"
+pink-extension = { version = "0.4", default-features = false }
 
 [features]
 default = ["std"]
@@ -28,6 +22,5 @@ std = [
     "scale/std",
     "scale-info/std",
     "pink-extension/std",
-    "tispark-client/std",
 ]
 ink-as-dependency = []

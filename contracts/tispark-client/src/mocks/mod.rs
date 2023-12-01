@@ -14,8 +14,7 @@ pub mod env_mocks {
         MINI_SECRET_KEY_LENGTH as MOCK_KEY_SIZE,
     };
     use sha2::Sha256;
-
-    use crate::types::consensus::AuthorityId;
+    use utils::types::AuthorityId;
 
     pub struct PhatContractEnv;
 
