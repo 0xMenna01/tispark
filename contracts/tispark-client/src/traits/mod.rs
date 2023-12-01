@@ -1,10 +1,13 @@
-use crate::types::{
-    commitment::ContractCommitment,
-    consensus::AuthorityId,
-    message::{
-        CommitmentRequest, ResponseStateProofRequest, StateResponseProof, StateVerifyRequest,
+use crate::{
+    message::RevealResponse,
+    types::{
+        commitment::ContractCommitment,
+        consensus::AuthorityId,
+        message::{
+            CommitmentRequest, ResponseStateProofRequest, StateResponseProof, StateVerifyRequest,
+        },
+        Result as ContractResult,
     },
-    Result as ContractResult,
 };
 use alloc::vec::Vec;
 use core::fmt::Debug;
@@ -83,7 +86,7 @@ pub trait CommitRevealContractManager {
     fn commit(&self, request: CommitmentRequest) -> ContractResult<ContractCommitment>;
 
     #[ink(message)]
-    fn reveal(&self, request: ResponseStateProofRequest) -> ContractResult<RevealBetResponse>;
+    fn reveal(&self, request: ResponseStateProofRequest) -> ContractResult<RevealResponse>;
 }
 
 #[ink::trait_definition]

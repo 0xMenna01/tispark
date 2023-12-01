@@ -9,6 +9,9 @@ sp-core = { git = "https://github.com/Cardinal-Cryptography/substrate.git", bran
 sp-application-crypto = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
 ink_env = { version = "4", default-features = false }
 hash256-std-hasher = { version = "0.11.0", default-features = false }
+byteorder = { version = "1.5.0", default-features = false }
+twox-hash = { version = "1.6.3", default-features = false }
+digest = { version = "0.10.7", default-features = false }
 
 ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
 rand = { version = "0.8.5", default-features = false, features = ["alloc"] }

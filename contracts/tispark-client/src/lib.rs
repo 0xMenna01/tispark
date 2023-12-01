@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 extern crate alloc;
 
+mod contract_ref;
 mod mocks;
 mod traits;
 mod types;
@@ -315,10 +316,7 @@ mod tispark_client {
             self.ensure_service_contract(request.get_service())?;
 
             // Get the commitment key used for deriving an AES-GCM 256 encryption key based on some nonce metadata
-            let commitment_key = self
-                .commitment_key
-                .get()
-                .expect("The commitment key is expected to be initialized");
+            let commitment_key = self.commitment_key();
 
             let (encoded_result, metadata) = request.get();
 
@@ -381,7 +379,7 @@ mod tispark_client {
             // Reveal the value as well, it is not essential, since it is also performed on the conuterpary chain.
             // It is an additional overhead in terms of computation, but it gains performances for actors that want a quick reveal.
             let reveal_value = DecryptedData::new(
-                reveal_proof.secret,
+                reveal_proof.secret.clone(),
                 res.nonce().to_vec(),
                 res.value().to_vec(),
             )

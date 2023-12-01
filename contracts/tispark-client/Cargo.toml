@@ -16,6 +16,7 @@ hex = { version = "0.4", default-features = false }
 
 pink-extension = { version = "0.4", default-features = false }
 
+crypto = { path = "../../crypto", default-features = false, features = ["full_crypto"] }
 tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto"] }
 light-client = { path = "../../light-client", default-features = false }
 commit-reveal-pallet = { path = "../../commit-reveal-pallet", default-features = false }
@@ -47,6 +48,7 @@ std = [
     "light-client/std",
     "tispark-primitives/std",
     "commit-reveal-pallet/std",
+    "crypto/std",
 ]
 ink-as-dependency = []
 

@@ -1,4 +1,5 @@
 use crate::{
+    state,
     types::{
         consensus::{AuthorityId, ConsensusProof, ConsensusState},
         state::GetCommitmentResponseProof,
@@ -62,13 +63,6 @@ pub struct ResponseStateProofRequest {
     pub consensus_proof: ConsensusProofParams,
 }
 
-impl ResponseStateProofRequest {
-    pub fn commit_hash(&self) -> Result<Hash, Error> {
-        let commit_id = Vec::from_hex(&self.meta.commit_id).map_err(|_| Error::InvalidHash)?;
-        Ok(Hash::from_slice(&commit_id))
-    }
-}
-
 impl TryFrom<ResponseStateProofRequest> for RevealResultRequest {
     type Error = Error;
     fn try_from(value: ResponseStateProofRequest) -> Result<Self, Self::Error> {
@@ -91,10 +85,14 @@ impl TryFrom<ResponseStateProofRequest> for RevealResultRequest {
             state_root: value.consensus_proof.state_root()?,
         };
 
-        let keys = vec![value.storage_proof.key];
+        let commit_id = value.meta.commit_hash()?;
+        let keys = vec![state::build_storage_key_for_commitment(
+            commit_id.as_bytes(),
+        )];
+
         let proof_request = GetCommitmentResponseProof::new(
             value.meta.height,
-            value.commit_hash()?,
+            commit_id,
             GetResponseProof::new(&keys, &root, &proof),
         )
         .unwrap();
@@ -126,10 +124,16 @@ pub struct StateRequestMetadata {
     pub height: u64,
 }
 
+impl StateRequestMetadata {
+    pub fn commit_hash(&self) -> Result<Hash, Error> {
+        let commit_id = Vec::from_hex(&self.commit_id).map_err(|_| Error::InvalidHash)?;
+        Ok(Hash::from_slice(&commit_id))
+    }
+}
+
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct StorageProofParams {
-    pub key: Vec<u8>,
     pub proof: Vec<Vec<u8>>,
 }
 

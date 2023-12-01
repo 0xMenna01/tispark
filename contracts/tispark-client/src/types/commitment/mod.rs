@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use pink_extension::chain_extension::SigType;
 use scale::{Decode, Encode};
 use tispark_primitives::commit_reveal::Commit;
