@@ -10,7 +10,7 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde-json-core = { version = "0.4.0" }
-
+hex-literal = "0.3.4"
 pink-extension = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }
 tispark-client = { path = "../tispark-client", default-features = false, features = ["ink-as-dependency"] }
@@ -19,8 +19,10 @@ utils = { path = "../utils", default-features = false }
 [dev-dependencies]
 pink-extension-runtime = "0.4"
 
+[patch.crates-io]
+ring = { git = "https://github.com/0xMenna01/ring-xous", branch = "better-wasm32-support" }
+
 [lib]
-name = "demo_game"
 path = "lib.rs"
 
 [features]

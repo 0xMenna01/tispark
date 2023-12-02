@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use scale::Encode;
 use serde::Deserialize;
 
@@ -9,7 +10,7 @@ pub struct FinalizedBlockHash<'a> {
 }
 
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
-pub struct Block<'a> {
+pub struct SignedBlock<'a> {
     pub jsonrpc: &'a str,
     #[serde(borrow)]
     pub result: BlockData<'a>,
@@ -19,25 +20,32 @@ pub struct Block<'a> {
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
 pub struct BlockData<'a> {
     #[serde(borrow)]
-    pub header: BlockHeader<'a>,
-    #[serde(borrow)]
-    pub extrinsics: Vec<&'a str>,
+    pub block: Block<'a>,
     pub justifications: Vec<Vec<Vec<u8>>>,
 }
 
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
-pub struct BlockHeader<'a> {
-    pub parent_hash: &'a str,
-    pub number: u32,
-    pub state_root: &'a str,
-    pub extrinsics_root: &'a str,
+#[serde(bound(deserialize = "Vec<&'a str>: Deserialize<'de>"))]
+pub struct Block<'a> {
     #[serde(borrow)]
-    pub digest: Logs<'a>,
+    pub header: Header<'a>,
+    #[serde(borrow)]
+    pub extrinsics: Vec<&'a str>,
+}
+
+#[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
+pub struct Header<'a> {
+    pub parentHash: &'a str,
+    pub number: &'a str,
+    pub stateRoot: &'a str,
+    pub extrinsicsRoot: &'a str,
+    #[serde(borrow)]
+    pub digest: Digest<'a>,
 }
 
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
 #[serde(bound(deserialize = "Vec<&'a str>: Deserialize<'de>"))]
-pub struct Logs<'a> {
+pub struct Digest<'a> {
     #[serde(borrow)]
     pub logs: Vec<&'a str>,
 }
