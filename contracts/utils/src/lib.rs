@@ -18,6 +18,10 @@ impl ContractRef {
         Self(id)
     }
 
+    pub fn get(&self) -> ContracId {
+        self.0.clone()
+    }
+
     pub fn query<Args, Res>(&self, exec: ExecutionInput<Args>) -> Res
     where
         Args: scale::Encode,

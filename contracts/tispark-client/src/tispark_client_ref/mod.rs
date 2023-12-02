@@ -82,6 +82,7 @@ impl TiSparkBuilder<ClientForService> {
     }
 }
 
+#[derive(Debug)]
 #[ink::storage_item]
 pub struct TisparkContractRef {
     id: TisparkClientId,

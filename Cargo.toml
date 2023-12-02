@@ -5,9 +5,11 @@ members = [
     "crypto",
     "primitives",
     "light-client",
-    "contracts/aleph-consensus-client",
     "commit-reveal-pallet",
+    "contracts/aleph-consensus-client",
     "contracts/tispark-client",
+    "contracts/tispark-manager",
+    "contracts/tispark-rpc",
     "contracts/utils",
 ]
 
