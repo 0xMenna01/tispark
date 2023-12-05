@@ -6,8 +6,12 @@ use crate::CryptoError;
 pub struct KeyMaterial<const BYTES: usize>([u8; BYTES]);
 
 impl<const BYTES: usize> KeyMaterial<BYTES> {
-    pub fn get(self) -> Vec<u8> {
-        self.0.to_vec()
+    pub fn get_ownership(self) -> [u8; BYTES] {
+        self.0
+    }
+
+    pub fn get(&self) -> &[u8] {
+        &self.0
     }
 }
 

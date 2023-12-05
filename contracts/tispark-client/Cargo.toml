@@ -1,0 +1,59 @@
+[package]
+name = "tispark-client"
+version = "0.1.0"
+authors = ["Menna <emanuele.cryptdev@gmail.com>"]
+edition = "2021"
+
+
+[dependencies]
+ink = { version = "4", default-features = false }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+sp-io = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false, features = ["disable_allocator"] }
+frame-support = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+hex = { version = "0.4", default-features = false }
+
+pink-extension = { version = "0.4", default-features = false }
+utils = { path = "../utils", default-features = false }
+crypto = { path = "../../crypto", default-features = false, features = ["full_crypto"] }
+tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto"] }
+commit-reveal-pallet = { path = "../../commit-reveal-pallet", default-features = false }
+aleph-consensus-client = { path = "../aleph-consensus-client", default-features = false, features = ["ink-as-dependency"] }
+tispark-rpc = { path = "../tispark-rpc", default-features = false, features = ["ink-as-dependency"] }
+light-client = { path = "../../light-client", default-features = false }
+
+[dev-dependencies]
+pink-extension-runtime = "0.4"
+rand = "0.8.5"
+hkdf = "0.12.3"
+sha2 = "0.10.8"
+schnorrkel = "0.11.3"
+
+[lib]
+path = "src/lib.rs"
+
+
+[patch.crates-io]
+ring = { git = "https://github.com/0xMenna01/ring-xous", branch = "better-wasm32-support" }
+
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "sp-io/std",
+    "scale/std",
+    "frame-support/std",
+    "scale-info/std",
+    "pink-extension/std",
+    "utils/std",
+    "tispark-primitives/std",
+    "commit-reveal-pallet/std",
+    "crypto/std",
+    "aleph-consensus-client/std",
+    "light-client/std",
+    "tispark-rpc/std",
+]
+ink-as-dependency = []
+

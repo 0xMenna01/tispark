@@ -1,0 +1,37 @@
+[package]
+name = "tispark-manager"
+version = "0.1.0"
+authors = ["0xMenna <emanuele.cryptdev@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "4", default-features = false }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+
+pink-extension = { version = "0.4", default-features = false }
+hex = { version = "0.4", default-features = false }
+tispark-client = { path = "../tispark-client", default-features = false, features = ["ink-as-dependency"] }
+utils = { path = "../utils", default-features = false }
+
+[dev-dependencies]
+pink-extension-runtime = "0.4"
+
+[lib]
+path = "lib.rs"
+
+[patch.crates-io]
+ring = { git = "https://github.com/0xMenna01/ring-xous", branch = "better-wasm32-support" }
+
+[features]
+default = ["std"]
+std = [
+    "ink/std",
+    "scale/std",
+    "scale-info/std",
+    "pink-extension/std",
+    "tispark-client/std",
+    "utils/std",
+]
+ink-as-dependency = []
