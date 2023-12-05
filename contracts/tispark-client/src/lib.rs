@@ -21,8 +21,8 @@ mod tispark_client {
         types::{
             commitment::{ContractCommitment, ContractCommitmentBuilder},
             message::{
-                CommitmentRequest, ContractPubKey, ContractSecretKey, ResponseStateProofRequest,
-                RevealResponse, RevealResultRequest,
+                CommitmentRequest, ContractPubKey, ContractSecretKey, RevealResponse,
+                RevealResultRequest,
             },
             ContractError, ContractResult, VersionNumber, Versioned,
         },
@@ -236,11 +236,7 @@ mod tispark_client {
         }
 
         #[ink(message)]
-        fn reveal(&self, request: ResponseStateProofRequest) -> ContractResult<RevealResponse> {
-            // Build a valid proof format
-            let request = RevealResultRequest::try_from(request)
-                .map_err(|_| ContractError::InvalidInputFormat)?;
-
+        fn reveal(&self, request: RevealResultRequest) -> ContractResult<RevealResponse> {
             // Verify the consensus proof
             consensus::verify_consensus(&self.consensus_client, request.proof())
                 .map_err(|_| ContractError::InvalidConsensusProof)?;

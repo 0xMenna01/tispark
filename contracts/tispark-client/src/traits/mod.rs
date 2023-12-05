@@ -1,10 +1,6 @@
 use crate::{
-    message::RevealResponse,
-    types::{
-        commitment::ContractCommitment,
-        message::{CommitmentRequest, ResponseStateProofRequest},
-        Result as ContractResult,
-    },
+    message::{RevealResponse, RevealResultRequest},
+    types::{commitment::ContractCommitment, message::CommitmentRequest, Result as ContractResult},
 };
 
 #[ink::trait_definition]
@@ -17,5 +13,5 @@ pub trait CommitRevealContractManager {
     fn commit(&self, request: CommitmentRequest) -> ContractResult<ContractCommitment>;
 
     #[ink(message)]
-    fn reveal(&self, request: ResponseStateProofRequest) -> ContractResult<RevealResponse>;
+    fn reveal(&self, request: RevealResultRequest) -> ContractResult<RevealResponse>;
 }

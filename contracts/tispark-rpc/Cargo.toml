@@ -13,8 +13,12 @@ serde-json-core = { version = "0.4.0" }
 hex-literal = "0.3.4"
 pink-extension = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false }
+tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto"] }
 tispark-client = { path = "../tispark-client", default-features = false, features = ["ink-as-dependency"] }
+aleph-consensus-client = { path = "../aleph-consensus-client", default-features = false, features = ["ink-as-dependency"] }
+light-client = { path = "../../light-client", default-features = false }
 utils = { path = "../utils", default-features = false }
+crypto = { path = "../../crypto", default-features = false, features = ["full_crypto"] }
 
 [dev-dependencies]
 pink-extension-runtime = "0.4"
@@ -35,5 +39,9 @@ std = [
     "tispark-client/std",
     "utils/std",
     "serde-json-core/std",
+    "crypto/std",
+    "light-client/std",
+    "tispark-primitives/std",
+    "aleph-consensus-client/std",
 ]
 ink-as-dependency = []
