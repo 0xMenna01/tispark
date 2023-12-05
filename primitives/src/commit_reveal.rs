@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use alloc::vec::Vec;
 use codec::{Decode, Encode};
 use crypto::{
     aead,
