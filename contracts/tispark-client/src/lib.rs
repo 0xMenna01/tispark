@@ -21,8 +21,8 @@ mod tispark_client {
         types::{
             commitment::{ContractCommitment, ContractCommitmentBuilder},
             message::{
-                CommitmentRequest, ContractPubKey, ContractSecretKey, RevealResponse,
-                RevealResultRequest,
+                CommitIdRequest, CommitmentRequest, ContractPubKey, ContractSecretKey,
+                RevealResponse,
             },
             ContractError, ContractResult, VersionNumber, Versioned,
         },
@@ -30,11 +30,13 @@ mod tispark_client {
     };
     use alloc::vec::Vec;
     use ink::storage::{Lazy, Mapping};
+    use light_client::Hash as H256;
     use pink::PinkEnvironment;
     use scale::Encode;
     use tispark_primitives::commit_reveal::{CommitRevealManager, DecryptedData, QueryMetadata};
+    use tispark_rpc::TiSparkRpcRef;
     use utils::{
-        types::{AccessControl, AuthorityId, ContracId, SudoAccount},
+        types::{AccessControl, AuthorityId, ContracId, Hash as CodeHash, SudoAccount},
         ContractRef as ConsensusClientRef,
     };
 
@@ -50,6 +52,8 @@ mod tispark_client {
         sudo: SudoAccount,
         /// Registered services
         services: Mapping<ServiceId, ContractServiceId>,
+        /// Rpc contract
+        rpc: TiSparkRpcRef,
     }
 
     #[derive(Encode)]
@@ -85,7 +89,7 @@ mod tispark_client {
 
     impl TiSparkClient {
         #[ink(constructor)]
-        pub fn new(consensus_client_id: ContracId) -> Self {
+        pub fn new(consensus_client_id: ContracId, rpc_contract_code_hash: CodeHash) -> Self {
             // contract keyring material to sign and verify messages.
             let (version, secret_key, pub_key) =
                 KeyringVersion::build_keyring_material(Versioned::Signing);
@@ -93,7 +97,7 @@ mod tispark_client {
             let mut sign_material = Lazy::new();
             sign_material.set(&SigningMaterial {
                 secret_key,
-                pub_key,
+                pub_key: pub_key.clone(),
                 version,
             });
 
@@ -105,10 +109,16 @@ mod tispark_client {
 
             // Set sudo account for initializing later on the consensus client authorities
             // It can be removed at later stages for a permissionless setting
-            let sudo = pink::env().caller();
+            let sudo = Self::env().caller();
             let sudo = SudoAccount::new(Some(sudo));
 
             let services = Mapping::new();
+            // Rpc contract instantiation
+            let rpc = TiSparkRpcRef::new()
+                .code_hash(rpc_contract_code_hash)
+                .endowment(0)
+                .salt_bytes([&pub_key[..], &sudo.to_vec()[..]].concat())
+                .instantiate();
 
             Self {
                 sign_material,
@@ -116,6 +126,7 @@ mod tispark_client {
                 consensus_client: ConsensusClientRef::new(consensus_client_id),
                 sudo,
                 services,
+                rpc,
             }
         }
 
@@ -236,21 +247,28 @@ mod tispark_client {
         }
 
         #[ink(message)]
-        fn reveal(&self, request: RevealResultRequest) -> ContractResult<RevealResponse> {
+        fn reveal(&self, request: CommitIdRequest) -> ContractResult<RevealResponse> {
+            let commit_id = H256::from(request);
+            let rpc_request = self
+                .rpc
+                .reveal_request(commit_id)
+                .map_err(|_| ContractError::RpcCallError)?;
+
             // Verify the consensus proof
-            consensus::verify_consensus(&self.consensus_client, request.proof())
+            consensus::verify_consensus(&self.consensus_client, rpc_request.proof())
                 .map_err(|_| ContractError::InvalidConsensusProof)?;
 
             // Verify a (key, value) pair within a state proof and a state commitment (state root hash)
             // The state commitment has been validated through the consensus state proof that includes the state root hash
-            let res = state::verify_state(&self.consensus_client, request.response())
+            let res = state::verify_state(&self.consensus_client, rpc_request.response())
                 .map_err(|_| ContractError::ConsensusClientInvalidStateProof)?;
             let res = CommitmentStateDecoder::decode(res)?;
 
             let commitment_key = self.commitment_key();
 
-            let reveal_proof = CommitRevealManager::reveal(&commitment_key.key, request.commmit())
-                .expect("The key derivation is expected to work in the reveal phase");
+            let reveal_proof =
+                CommitRevealManager::reveal(&commitment_key.key, rpc_request.commmit())
+                    .expect("The key derivation is expected to work in the reveal phase");
 
             // Reveal the value as well, it is not essential, since it is also performed on the conuterpary chain.
             // It is an additional overhead in terms of computation, but it gains performances for actors that want a quick reveal.

@@ -4,6 +4,7 @@ extern crate alloc;
 mod types;
 
 // pink_extension is short for Phala ink! extension
+pub use self::tispark_rpc::TiSparkRpcRef;
 use pink_extension as pink;
 
 #[pink::contract(env=PinkEnvironment)]
@@ -12,22 +13,22 @@ mod tispark_rpc {
     use crate::types::{
         chain_state::{self, ChainStateHandler},
         consensus::{ConsensusHandler, ConsensusProofParams},
-        CommitIdRequest, Error, ResponseStateProofRequest, Result, StateRequestMetadata,
+        CommitIdRequest, Error, ResponseStateProofRequest, Result, RevealResultRequest,
+        StateRequestMetadata,
     };
     use alloc::string::String;
     use pink::PinkEnvironment;
-    use tispark_client::message::RevealResultRequest;
     use utils::types::{AccessControl, SudoAccount};
 
     /// Simple rpc call implementation
     // todo - before production: implement a dedicated web server with an apikey that in one call returs all info
     #[ink(storage)]
-    pub struct TisparkRpc {
+    pub struct TiSparkRpc {
         admin: SudoAccount,
         rpc_node: String,
     }
 
-    impl TisparkRpc {
+    impl TiSparkRpc {
         /// Constructor to initializes your contract
         #[ink(constructor)]
         pub fn new() -> Self {
@@ -49,7 +50,7 @@ mod tispark_rpc {
         }
 
         #[ink(message)]
-        pub fn reveal_request(&mut self, id: CommitIdRequest) -> Result<RevealResultRequest> {
+        pub fn reveal_request(&self, id: CommitIdRequest) -> Result<RevealResultRequest> {
             self.ensure_owner()?;
 
             let endpoint = &self.rpc_node;

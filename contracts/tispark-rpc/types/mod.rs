@@ -10,9 +10,9 @@ use light_client::Hash;
 use pink_extension as pink;
 use scale::{Decode, Encode};
 use serde::Deserialize;
-use tispark_client::message::RevealResultRequest;
-use tispark_primitives::state_proofs::{
-    GetResponseProof, HashAlgorithm, Proof, StateCommitment, SubstrateStateProof,
+use tispark_primitives::{
+    commit_reveal::CommitId,
+    state_proofs::{GetResponseProof, HashAlgorithm, Proof, StateCommitment, SubstrateStateProof},
 };
 
 pub mod chain_state;
@@ -152,6 +152,38 @@ pub struct StateRequestMetadata {
     pub id: CommitIdRequest,
     pub timestamp: u64,
     pub height: u64,
+}
+
+/// Request to reveal the key binded to a commit
+/// The nonce_metadata is used as iv
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub struct RevealResultRequest {
+    response: StateTrieResponseProof,
+    proof: ConsensusProof,
+    commit: CommitId,
+}
+
+impl RevealResultRequest {
+    pub fn new(response: StateTrieResponseProof, proof: ConsensusProof, commit: CommitId) -> Self {
+        Self {
+            response,
+            proof,
+            commit,
+        }
+    }
+
+    pub fn proof(&self) -> ConsensusProof {
+        self.proof.clone()
+    }
+
+    pub fn response(&self) -> StateTrieResponseProof {
+        self.response.clone()
+    }
+
+    pub fn commmit(&self) -> Hash {
+        self.commit.clone()
+    }
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]

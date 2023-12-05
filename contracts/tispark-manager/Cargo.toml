@@ -19,8 +19,10 @@ utils = { path = "../utils", default-features = false }
 pink-extension-runtime = "0.4"
 
 [lib]
-name = "demo_game"
 path = "lib.rs"
+
+[patch.crates-io]
+ring = { git = "https://github.com/0xMenna01/ring-xous", branch = "better-wasm32-support" }
 
 [features]
 default = ["std"]

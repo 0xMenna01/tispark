@@ -2,7 +2,9 @@ use ink::primitives::{AccountId, Hash as CryptoHash};
 
 mod auth;
 
+use alloc::vec::Vec;
 pub use auth::AccessControl;
+use scale::Encode;
 pub type AuthorityId = AccountId;
 pub type ContracId = AccountId;
 pub type Hash = CryptoHash;
@@ -20,6 +22,10 @@ impl SudoAccount {
 
     pub fn remove(&mut self) {
         self.account = None
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.account.encode()
     }
 
     pub fn set(&mut self, account: AuthorityId) {

@@ -1,10 +1,19 @@
 use crate::ServiceId;
-use aleph_consensus_client::{ConsensusProof, StateTrieResponseProof};
 use alloc::vec::Vec;
-
-use light_client::Hash;
+use light_client::Hash as H256;
 use scale::{Decode, Encode};
-use tispark_primitives::commit_reveal::{CommitId, RevealProof};
+use tispark_primitives::commit_reveal::RevealProof;
+use utils::types::Hash;
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+pub struct CommitIdRequest(Hash);
+
+impl From<CommitIdRequest> for H256 {
+    fn from(request: CommitIdRequest) -> Self {
+        H256::from_slice(request.0.as_ref())
+    }
+}
 
 /// Encoded result that will be encrypted  associated to some metadata and a service id
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
@@ -32,38 +41,6 @@ impl CommitmentRequest {
 
     pub fn get(&self) -> (Vec<u8>, Vec<u8>) {
         (self.encoded_result.clone(), self.metadata.clone())
-    }
-}
-
-/// Request to reveal the key binded to a commit
-/// The nonce_metadata is used as iv
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct RevealResultRequest {
-    response: StateTrieResponseProof,
-    proof: ConsensusProof,
-    commit: CommitId,
-}
-
-impl RevealResultRequest {
-    pub fn new(response: StateTrieResponseProof, proof: ConsensusProof, commit: CommitId) -> Self {
-        Self {
-            response,
-            proof,
-            commit,
-        }
-    }
-
-    pub fn proof(&self) -> ConsensusProof {
-        self.proof.clone()
-    }
-
-    pub fn response(&self) -> StateTrieResponseProof {
-        self.response.clone()
-    }
-
-    pub fn commmit(&self) -> Hash {
-        self.commit.clone()
     }
 }
 

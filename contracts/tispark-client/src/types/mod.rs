@@ -43,6 +43,9 @@ pub enum ContractError {
     GameAlreadyExists,
     InvalidGame,
     InvalidConsensusProof,
+    InvalidHex,
+    InvalidHash,
+    RpcCallError,
 }
 
 pub type VersionNumber = u32;
