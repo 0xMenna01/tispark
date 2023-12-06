@@ -45,7 +45,6 @@ impl Random {
 }
 
 const HASH_LENGTH: usize = 32;
-
 pub struct CryptoHasher(());
 
 impl CryptoHasher {
