@@ -17,7 +17,7 @@ tispark-primitives = { package = "primitives", path = "../../primitives", defaul
 aleph-consensus-client = { path = "../aleph-consensus-client", default-features = false, features = ["ink-as-dependency"] }
 light-client = { path = "../../light-client", default-features = false }
 utils = { path = "../utils", default-features = false }
-crypto = { path = "../../crypto", default-features = false, features = ["full_crypto"] }
+crypto = { path = "../../crypto", default-features = false, features = ["full_crypto", "phat_contract"] }
 
 [dev-dependencies]
 pink-extension-runtime = "0.4"

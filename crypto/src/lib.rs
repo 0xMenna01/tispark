@@ -11,9 +11,6 @@ pub mod aead;
 pub mod key_derive;
 
 use alloc::vec::Vec;
-use byteorder::{ByteOrder, LittleEndian};
-use core::hash::Hasher;
-use digest::Digest;
 use ink_env::hash::{Blake2x256, CryptoHash};
 
 #[derive(Debug)]
@@ -48,6 +45,7 @@ impl Random {
 }
 
 const HASH_LENGTH: usize = 32;
+
 pub struct CryptoHasher(());
 
 impl CryptoHasher {
@@ -58,9 +56,15 @@ impl CryptoHasher {
     }
 }
 
+#[cfg(feature = "phat_contract")]
 pub struct Twox64Concat;
+
+#[cfg(feature = "phat_contract")]
 impl Twox64Concat {
     pub fn hash(x: &[u8]) -> Vec<u8> {
+        use byteorder::{ByteOrder, LittleEndian};
+        use core::hash::Hasher;
+        use digest::Digest;
         let r0 = twox_hash::XxHash::with_seed(0).chain_update(x).finish();
         let mut r: [u8; 8] = [0; 8];
         LittleEndian::write_u64(&mut r[0..8], r0);
