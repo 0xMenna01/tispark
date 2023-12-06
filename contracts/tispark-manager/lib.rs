@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 extern crate alloc;
 
-mod manager_ref;
+pub mod manager_ref;
 
 // pink_extension is short for Phala ink! extension
 use pink_extension as pink;
