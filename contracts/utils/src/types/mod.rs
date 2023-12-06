@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 pub use auth::AccessControl;
 use scale::Encode;
 pub type AuthorityId = AccountId;
-pub type ContracId = AccountId;
+pub type ContractId = AccountId;
 pub type Hash = CryptoHash;
 
 #[derive(Debug)]

@@ -9,6 +9,12 @@ use utils::types::Hash;
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct CommitIdRequest(Hash);
 
+impl CommitIdRequest {
+    pub fn new(hash: Hash) -> Self {
+        CommitIdRequest(hash)
+    }
+}
+
 impl From<CommitIdRequest> for H256 {
     fn from(request: CommitIdRequest) -> Self {
         H256::from_slice(request.0.as_ref())

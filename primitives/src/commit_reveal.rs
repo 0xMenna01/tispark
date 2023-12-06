@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, Error};
 use crypto::{
     aead,
     key_derive::{KeyMaterial, KDF},
@@ -39,6 +39,18 @@ impl<Metadata: Encode> Commit<Metadata> {
             data: (self.data.0, self.data.1.encode()),
             iv: self.iv,
         }
+    }
+}
+
+impl Commit<Vec<u8>> {
+    pub fn decode<Metadata: Decode>(self) -> Result<Commit<Metadata>, Error> {
+        let encoded_meta = self.data.1;
+        let meta = Decode::decode(&mut &encoded_meta[..])?;
+        Ok(Commit {
+            id: self.id,
+            data: (self.data.0, meta),
+            iv: self.iv,
+        })
     }
 }
 

@@ -1,7 +1,8 @@
 use self::input::SensitiveData;
 use crate::{
-    commitment::ContractCommitment, message::CommitmentRequest, ContractError, ContractResult,
-    ServiceId,
+    commitment::ContractCommitment,
+    message::{CommitIdRequest, CommitmentRequest, ContractSignature, RevealResponse},
+    ContractResult, ServiceId,
 };
 use alloc::vec::Vec;
 use ink::{
@@ -9,7 +10,14 @@ use ink::{
     primitives::AccountId,
 };
 use scale::{Decode, Encode};
-use utils::ContractRef;
+use tispark_primitives::commit_reveal::{Commit, RevealProof};
+use utils::{types::Hash, ContractRef};
+
+pub enum Error {
+    CommitmentError,
+    RevealError,
+    DecodingMetadataError,
+}
 
 pub mod input {
     use super::*;
@@ -33,12 +41,11 @@ pub mod input {
 }
 
 pub type TisparkClientId = AccountId;
-pub type Error = ContractError;
 
 #[derive(Default, Debug)]
-struct VoidContract;
-struct ClientLoaded(TisparkClientId);
-struct ClientForService {
+pub struct VoidContract;
+pub struct ClientLoaded(TisparkClientId);
+pub struct ClientForService {
     client: TisparkClientId,
     service_request: ServiceId,
 }
@@ -76,7 +83,7 @@ impl TiSparkBuilder<ClientLoaded> {
 impl TiSparkBuilder<ClientForService> {
     pub fn build(self) -> TisparkContractRef {
         TisparkContractRef {
-            id: self.state.client,
+            contract: ContractRef::new(self.state.client),
             service: self.state.service_request,
         }
     }
@@ -85,15 +92,25 @@ impl TiSparkBuilder<ClientForService> {
 #[derive(Debug)]
 #[ink::storage_item]
 pub struct TisparkContractRef {
-    id: TisparkClientId,
+    contract: ContractRef,
     service: ServiceId,
 }
 
+pub struct CommitmentPlainResponse<Metadata> {
+    pub signature: ContractSignature,
+    pub commit: Commit<Metadata>,
+}
+
+pub struct RevealPlainResponse<Value> {
+    pub result: Value,
+    pub proof: RevealProof,
+}
+
 impl TisparkContractRef {
-    pub fn commit<Value: Encode, Metadata: Encode>(
+    pub fn commit<Value: Encode, Metadata: Encode + Decode>(
         &self,
         data: SensitiveData<Value, Metadata>,
-    ) -> ContractResult<ContractCommitment> {
+    ) -> Result<CommitmentPlainResponse<Metadata>, Error> {
         let (data, metadata) = data.encode();
         // construct contract request
         let request = CommitmentRequest::new(data, metadata, self.service);
@@ -104,10 +121,41 @@ impl TisparkContractRef {
         .push_arg(request);
 
         // make cross contract call
-        ContractRef::new(self.id).query(exec)
+        let res: ContractResult<ContractCommitment> = self.contract.query(exec);
+
+        res.map_or(Err(Error::CommitmentError), |contract_commitment| {
+            Ok(CommitmentPlainResponse {
+                signature: contract_commitment.signature,
+                commit: contract_commitment
+                    .commit
+                    .decode()
+                    .map_err(|_| Error::DecodingMetadataError)?,
+            })
+        })
     }
 
-    pub fn reveal<Value: Decode>() {
-        todo!()
+    pub fn reveal<Value: Decode>(
+        &self,
+        commit_id: Hash,
+    ) -> Result<RevealPlainResponse<Value>, Error> {
+        let request = CommitIdRequest::new(commit_id);
+
+        let exec = ExecutionInput::new(Selector::new(ink::selector_bytes!(
+            "CommitRevealContractManager::reveal"
+        )))
+        .push_arg(request);
+
+        let res: ContractResult<RevealResponse> = self.contract.query(exec);
+
+        res.map_or(Err(Error::RevealError), |reveal_response| {
+            let encoded_res = reveal_response.result();
+            let result =
+                Decode::decode(&mut &encoded_res[..]).map_err(|_| Error::DecodingMetadataError)?;
+
+            Ok(RevealPlainResponse {
+                result,
+                proof: reveal_response.proof(),
+            })
+        })
     }
 }

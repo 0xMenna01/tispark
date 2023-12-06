@@ -8,8 +8,8 @@ use super::message::{ContractSecretKey, ContractSignature, SigningData};
 #[derive(Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct ContractCommitment {
-    signature: ContractSignature,
-    commit: Commit<Vec<u8>>,
+    pub signature: ContractSignature,
+    pub commit: Commit<Vec<u8>>,
 }
 
 pub struct ContractCommitmentBuilder<CommitState> {

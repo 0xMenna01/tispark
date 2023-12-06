@@ -36,7 +36,7 @@ mod tispark_client {
     use tispark_primitives::commit_reveal::{CommitRevealManager, DecryptedData, QueryMetadata};
     use tispark_rpc::TiSparkRpcRef;
     use utils::{
-        types::{AccessControl, AuthorityId, ContracId, Hash as CodeHash, SudoAccount},
+        types::{AccessControl, AuthorityId, ContractId, Hash as CodeHash, SudoAccount},
         ContractRef as ConsensusClientRef,
     };
 
@@ -89,7 +89,7 @@ mod tispark_client {
 
     impl TiSparkClient {
         #[ink(constructor)]
-        pub fn new(consensus_client_id: ContracId, rpc_contract_code_hash: CodeHash) -> Self {
+        pub fn new(consensus_client_id: ContractId, rpc_contract_code_hash: CodeHash) -> Self {
             // contract keyring material to sign and verify messages.
             let (version, secret_key, pub_key) =
                 KeyringVersion::build_keyring_material(Versioned::Signing);

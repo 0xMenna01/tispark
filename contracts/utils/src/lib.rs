@@ -7,18 +7,18 @@ use ink::env::{
     call::{build_call, ExecutionInput},
     DefaultEnvironment,
 };
-use types::ContracId;
+use types::ContractId;
 
 #[derive(Debug)]
 #[ink::storage_item]
-pub struct ContractRef(ContracId);
+pub struct ContractRef(ContractId);
 
 impl ContractRef {
-    pub fn new(id: ContracId) -> Self {
+    pub fn new(id: ContractId) -> Self {
         Self(id)
     }
 
-    pub fn get(&self) -> ContracId {
+    pub fn get(&self) -> ContractId {
         self.0.clone()
     }
 

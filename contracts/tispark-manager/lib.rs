@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 extern crate alloc;
 
+mod manager_ref;
+
 // pink_extension is short for Phala ink! extension
 use pink_extension as pink;
 
@@ -10,7 +12,7 @@ mod tispark_manager {
     use pink::PinkEnvironment;
     use scale::{Decode, Encode};
     use utils::{
-        types::{AccessControl, ContracId, SudoAccount},
+        types::{AccessControl, ContractId, SudoAccount},
         ContractRef,
     };
 
@@ -33,7 +35,7 @@ mod tispark_manager {
     impl TisparkManager {
         /// Constructor to initializes your contract
         #[ink(constructor)]
-        pub fn new(id: ContracId) -> Self {
+        pub fn new(id: ContractId) -> Self {
             let admin = pink::env().caller();
             let admin = SudoAccount::new(Some(admin));
 
@@ -51,7 +53,7 @@ mod tispark_manager {
         }
 
         #[ink(message)]
-        pub fn update_client(&mut self, id: ContracId) -> Result<()> {
+        pub fn update_client(&mut self, id: ContractId) -> Result<()> {
             self.ensure_owner()?;
             // update tispark client
             self.client = ContractRef::new(id);
@@ -59,7 +61,7 @@ mod tispark_manager {
         }
 
         #[ink(message)]
-        pub fn get_client(&self) -> ContracId {
+        pub fn get_client(&self) -> ContractId {
             self.client.get()
         }
     }
