@@ -3,10 +3,16 @@ use codec::{Decode, Encode, Error};
 use crypto::{
     aead,
     key_derive::{KeyMaterial, KDF},
-    CryptoError, CryptoHasher, Random,
+    CryptoError, Random,
 };
 use scale_info::TypeInfo;
 use sp_core::H256;
+
+#[cfg(any(feature = "phat_contract", feature = "std"))]
+use crypto::CryptoHasher;
+
+#[cfg(any(feature = "phat_contract", feature = "std"))]
+pub use manager::*;
 
 const KEY_SIZE: usize = 256 / 8;
 const KDF_LABEL: &[u8] = b"aesgcm256-commitkey";
@@ -108,134 +114,139 @@ impl DecryptedData {
     }
 }
 
-// commit-reveal's implementation logic
-pub struct CommitRevealManager<S> {
-    state: S,
-}
+#[cfg(any(feature = "phat_contract", feature = "std"))]
+mod manager {
+    use super::*;
+    // commit-reveal's implementation logic
+    pub struct CommitRevealManager<S> {
+        state: S,
+    }
 
-pub struct UnSet;
+    pub struct UnSet;
 
-/// Setup material for initializing the aes-gcm key and iv to encrypt the data.
-/// The key is derived using the commit_id, which is a nonce, that identifies the commitment.
-pub struct Setup<CommitMetadata> {
-    commit_id: CommitId,
-    meta: CommitMetadata,
-    secret: KeyMaterial<KEY_SIZE>,
-    iv: Vec<u8>,
-}
+    /// Setup material for initializing the aes-gcm key and iv to encrypt the data.
+    /// The key is derived using the commit_id, which is a nonce, that identifies the commitment.
+    pub struct Setup<CommitMetadata> {
+        commit_id: CommitId,
+        meta: CommitMetadata,
+        secret: KeyMaterial<KEY_SIZE>,
+        iv: Vec<u8>,
+    }
 
-pub struct SchemeReady<PlainText: Encode, CommitMetadata> {
-    setup_material: Setup<CommitMetadata>,
-    data: PlainText,
-}
+    pub struct SchemeReady<PlainText: Encode, CommitMetadata> {
+        setup_material: Setup<CommitMetadata>,
+        data: PlainText,
+    }
 
-#[derive(Encode)]
-pub struct QueryHeight {
-    height: u32,
-    timestamp: u64,
-}
+    #[derive(Encode)]
+    pub struct QueryHeight {
+        pub height: u32,
+        pub timestamp: u64,
+    }
 
-#[derive(Encode)]
-pub struct QueryMetadata<Metadata> {
-    height: QueryHeight,
-    metadata: Metadata,
-}
+    #[derive(Encode)]
+    pub struct QueryMetadata<Metadata> {
+        pub height: QueryHeight,
+        pub metadata: Metadata,
+    }
 
-impl<Metadata> QueryMetadata<Metadata> {
-    pub fn new(height: u32, timestamp: u64, metadata: Metadata) -> Self {
-        Self {
-            height: QueryHeight { height, timestamp },
-            metadata,
+    impl<Metadata> QueryMetadata<Metadata> {
+        pub fn new(height: u32, timestamp: u64, metadata: Metadata) -> Self {
+            Self {
+                height: QueryHeight { height, timestamp },
+                metadata,
+            }
         }
     }
-}
 
-#[derive(Encode)]
-pub struct KdfNonce<Metadata> {
-    addons: QueryMetadata<Metadata>,
-    entropy: EntropyBytes,
-}
-
-impl CommitRevealManager<UnSet> {
-    /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
-    pub fn setup<CommitMetadata: Encode>(
-        secret: &[u8],
-        query: QueryMetadata<CommitMetadata>,
-    ) -> Result<CommitRevealManager<Setup<CommitMetadata>>, CryptoError> {
-        let kdf = KDF::<KEY_SIZE>::new(secret);
-        // Retrieve some high entropy bytes to compute a one time key for encrypting some data, within an associated metadata
-        let mut fixed_entropy = [0u8; ENTROPY_SIZE as usize];
-        let entropy = Random::get_random_bytes(ENTROPY_SIZE);
-        fixed_entropy.copy_from_slice(&entropy);
-
-        // Some nonce value used to derive the commitment key
-        let nonce = KdfNonce {
-            addons: query,
-            entropy: fixed_entropy,
-        };
-        let commit_id: H256 = CryptoHasher::hash(&nonce.encode()).into();
-        // derive the key using the commitment id
-        let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
-        // there is a timing window in which this iv will repeat, depends on the calling blockchain system's block time
-        // it is not an issue since the key will always change during that timing window
-        let iv = nonce.addons.height.encode();
-
-        let state = Setup {
-            commit_id,
-            meta: nonce.addons.metadata,
-            secret,
-            iv,
-        };
-
-        Ok(CommitRevealManager { state })
+    #[derive(Encode)]
+    pub struct KdfNonce<Metadata> {
+        addons: QueryMetadata<Metadata>,
+        entropy: EntropyBytes,
     }
 
-    /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
-    pub fn reveal(secret: &[u8], commit_id: H256) -> Result<RevealProof, CryptoError> {
-        let kdf = KDF::<KEY_SIZE>::new(secret);
+    impl CommitRevealManager<UnSet> {
+        /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
+        pub fn setup<CommitMetadata: Encode>(
+            secret: &[u8],
+            query: QueryMetadata<CommitMetadata>,
+        ) -> Result<CommitRevealManager<Setup<CommitMetadata>>, CryptoError> {
+            let kdf = KDF::<KEY_SIZE>::new(secret);
+            // Retrieve some high entropy bytes to compute a one time key for encrypting some data, within an associated metadata
+            let mut fixed_entropy = [0u8; ENTROPY_SIZE as usize];
+            let entropy = Random::get_random_bytes(ENTROPY_SIZE);
+            fixed_entropy.copy_from_slice(&entropy);
 
-        let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
+            // Some nonce value used to derive the commitment key
+            let nonce = KdfNonce {
+                addons: query,
+                entropy: fixed_entropy,
+            };
+            let commit_id: H256 = CryptoHasher::hash(&nonce.encode()).into();
+            // derive the key using the commitment id
+            let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
+            // there is a timing window in which this iv will repeat, depends on the calling blockchain system's block time
+            // it is not an issue since the key will always change during that timing window
+            let iv = nonce.addons.height.encode();
 
-        Ok(RevealProof {
-            commit_id,
-            secret: secret.get_ownership().to_vec(),
-        })
+            let state = Setup {
+                commit_id,
+                meta: nonce.addons.metadata,
+                secret,
+                iv,
+            };
+
+            Ok(CommitRevealManager { state })
+        }
+
+        /// Setup a new commit-reveal scheme Manager builder that derives a new one-time key
+        pub fn reveal(secret: &[u8], commit_id: H256) -> Result<RevealProof, CryptoError> {
+            let kdf = KDF::<KEY_SIZE>::new(secret);
+
+            let secret = kdf.derive_aead_key(commit_id.as_bytes(), [KDF_LABEL].as_slice())?;
+
+            Ok(RevealProof {
+                commit_id,
+                secret: secret.get_ownership().to_vec(),
+            })
+        }
     }
-}
 
-impl<CommitMetadata> CommitRevealManager<Setup<CommitMetadata>> {
-    /// inject a plaintext to be encrypted within the commit-reveal manager
-    pub fn inject(
-        self,
-        data: Vec<u8>,
-    ) -> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
-        let state = SchemeReady {
-            setup_material: self.state,
-            data,
-        };
+    impl<CommitMetadata> CommitRevealManager<Setup<CommitMetadata>> {
+        /// inject a plaintext to be encrypted within the commit-reveal manager
+        pub fn inject(
+            self,
+            data: Vec<u8>,
+        ) -> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
+            let state = SchemeReady {
+                setup_material: self.state,
+                data,
+            };
 
-        CommitRevealManager { state }
+            CommitRevealManager { state }
+        }
     }
-}
 
-impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
-    pub fn commit(self) -> Result<Commit<CommitMetadata>, CommitRevealError> {
-        // 1. Encoded data to encrypt
-        let mut data = self.state.data;
+    impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
+        pub fn commit(self) -> Result<Commit<CommitMetadata>, CommitRevealError> {
+            // 1. Encoded data to encrypt
+            let mut data = self.state.data;
 
-        // 2. Set up iv and secret
-        let iv = self.state.setup_material.iv;
-        let iv = aead::generate_iv(&iv);
-        let secret = self.state.setup_material.secret.get();
+            // 2. Set up iv and secret
+            let iv = self.state.setup_material.iv;
+            let iv = aead::generate_iv(&iv);
+            let secret = self.state.setup_material.secret.get();
 
-        // 3. Encrypt
-        aead::encrypt(&iv, secret, &mut data).map_err(|_| CommitRevealError::EncryptionError)?;
+            // 3. Encrypt
+            aead::encrypt(&iv, secret, &mut data)
+                .map_err(|_| CommitRevealError::EncryptionError)?;
 
-        Ok(Commit {
-            id: self.state.setup_material.commit_id,
-            data: (data, self.state.setup_material.meta),
-            iv: iv.to_vec(),
-        })
+            Ok(Commit {
+                id: self.state.setup_material.commit_id,
+                data: (data, self.state.setup_material.meta),
+                iv: iv.to_vec(),
+            })
+        }
     }
 }
 

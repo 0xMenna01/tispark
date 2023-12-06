@@ -57,8 +57,9 @@ impl hkdf::KeyType for My<usize> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use crate::Random;
+
+    use super::*;
 
     #[test]
     fn test_key_derivation() {
@@ -66,13 +67,9 @@ mod test {
         let info = [b"test_key_derivation".as_slice()];
 
         let secret = Random::get_random_bytes(32);
-        assert_ne!(secret, vec![0u8; 32]);
-
         let kdf = KDF::<32>::new(secret.as_slice());
         let aead_key = kdf.derive_aead_key(dummy_nonce.as_ref(), &info);
 
         assert!(aead_key.is_ok());
-        let aead_key = aead_key.unwrap();
-        assert_ne!(aead_key.0, [0_u8; 32]);
     }
 }

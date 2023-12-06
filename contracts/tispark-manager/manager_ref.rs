@@ -1,15 +1,6 @@
 use ink::env::call::{ExecutionInput, Selector};
-use scale::{Decode, Encode};
-use tispark_client::{
-    commitment::ContractCommitment as TiSparkCommitment,
-    message::RevealResponse,
-    tispark_client_ref::{input::SensitiveData, Error, TiSparkBuilder, TisparkContractRef},
-    ContractResult as TiSparkResult, ServiceId,
-};
-use utils::{
-    types::{ContractId, Hash},
-    ContractRef,
-};
+use tispark_client::{ServiceId, tispark_client_ref::{TisparkContractRef, TiSparkBuilder}};
+use utils::{types::ContractId, ContractRef};
 
 #[derive(Debug)]
 #[ink::storage_item]

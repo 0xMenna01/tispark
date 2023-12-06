@@ -17,7 +17,7 @@ hex = { version = "0.4", default-features = false }
 pink-extension = { version = "0.4", default-features = false }
 utils = { path = "../utils", default-features = false }
 
-tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto"] }
+tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto", "phat_contract"] }
 light-client = { path = "../../light-client", default-features = false }
 
 [dev-dependencies]
