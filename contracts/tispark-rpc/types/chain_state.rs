@@ -1,9 +1,8 @@
 use super::{Error, ReadProof, Result, UntrustedAuthorities, Utils};
 use alloc::{format, string::String, vec, vec::Vec};
-use crypto::Twox64Concat;
 use hex::FromHex;
 use scale::{Decode, Encode};
-use utils::types::AuthorityId;
+use utils::types::{AuthorityId, Twox64Concat};
 
 /// The encoded substrate storage key for the Authorities StorageValue
 const AUTH_STORAGE_KEY: &str = "0xd39f9508314957b74c787c4abb8c95bb5e0621c4869aa60c02be9adcc98a0d1d";

@@ -1,7 +1,6 @@
 use crate::types::Result as ContractResult;
 use aleph_consensus_client::{ConsensusContractResult, StateTrieResponseProof};
 use alloc::vec::Vec;
-use crypto::Twox64Concat;
 use frame_support::traits::ConstU32;
 use ink::env::call::{ExecutionInput, Selector};
 use scale::{Decode, Encode};
@@ -71,18 +70,4 @@ impl CommitmentStateDecoder {
             Vec::new(),
         ))
     }
-}
-
-/// TwoxHash of Pallet name CommitReveal
-const MODULE: [u8; 16] = [
-    0xa4, 0x5f, 0x72, 0x30, 0x93, 0x2f, 0xe9, 0xd5, 0xeb, 0xc8, 0x46, 0xb8, 0x73, 0xec, 0xd5, 0x3f,
-];
-/// TwoxHash of StorageMape Name PhatContractCommitment
-const METHOD: [u8; 16] = [
-    0xe2, 0xb9, 0x63, 0x43, 0x2a, 0xe5, 0x50, 0x77, 0x2d, 0xaa, 0x14, 0xb5, 0xf8, 0xe6, 0xe3, 0x97,
-];
-
-pub fn build_storage_key_for_commitment(commit: &[u8]) -> Vec<u8> {
-    let twox_commit = Twox64Concat::hash(commit);
-    [&MODULE[..], &METHOD[..], &twox_commit[..]].concat()
 }

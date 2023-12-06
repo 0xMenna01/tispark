@@ -14,6 +14,10 @@ scale-info = { version = "2", default-features = false, features = ["derive"], o
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false }
 pink-extension = { version = "0.4", default-features = false }
+hash256-std-hasher = { version = "0.11.0", default-features = false }
+byteorder = { version = "1.5.0", default-features = false }
+twox-hash = { version = "1.6.3", default-features = false }
+digest = { version = "0.10.7", default-features = false }
 
 [features]
 default = ["std"]
@@ -22,5 +26,6 @@ std = [
     "scale/std",
     "scale-info/std",
     "pink-extension/std",
+    "hash256-std-hasher/std",
 ]
 ink-as-dependency = []

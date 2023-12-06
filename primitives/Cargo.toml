@@ -40,5 +40,3 @@ runtime-benchmarks = [
 try-runtime = [
 	"sp-runtime/try-runtime",
 ]
-
-phat_contract = ["crypto/phat_contract"]

@@ -1,9 +1,11 @@
 use ink::primitives::{AccountId, Hash as CryptoHash};
 
 mod auth;
+mod crypto;
 
 use alloc::vec::Vec;
 pub use auth::AccessControl;
+pub use crypto::{CryptoHasher, Random, Twox64Concat};
 use scale::Encode;
 pub type AuthorityId = AccountId;
 pub type ContractId = AccountId;
