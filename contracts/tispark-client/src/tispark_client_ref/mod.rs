@@ -96,11 +96,15 @@ pub struct TisparkContractRef {
     service: ServiceId,
 }
 
+#[derive(Encode, Decode)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct CommitmentPlainResponse<Metadata> {
     pub signature: ContractSignature,
     pub commit: Commit<Metadata>,
 }
 
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct RevealPlainResponse<Value> {
     pub result: Value,
     pub proof: RevealProof,
