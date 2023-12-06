@@ -58,7 +58,7 @@ pub struct CommitmentStateDecoder;
 
 impl CommitmentStateDecoder {
     pub fn decode(encoded: Vec<u8>) -> ContractResult<ResultCommitment> {
-        let commitment: commit_reveal_pallet::types::TiSparkCommitment<
+        let commitment: pallet_commit_reveal::types::TiSparkCommitment<
             Len<MAX_LEN_COMMITMENT>,
             Len<LEN_IV>,
             Len<LEN_ALGO>,

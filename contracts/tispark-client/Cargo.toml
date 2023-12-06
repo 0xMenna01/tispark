@@ -18,7 +18,7 @@ pink-extension = { version = "0.4", default-features = false }
 utils = { path = "../utils", default-features = false }
 crypto = { path = "../../crypto", default-features = false, features = ["full_crypto"] }
 tispark-primitives = { package = "primitives", path = "../../primitives", default-features = false, features = ["full_crypto"] }
-commit-reveal-pallet = { path = "../../commit-reveal-pallet", default-features = false }
+pallet-commit-reveal = { path = "../../pallet-commit-reveal", default-features = false }
 aleph-consensus-client = { path = "../aleph-consensus-client", default-features = false, features = ["ink-as-dependency"] }
 tispark-rpc = { path = "../tispark-rpc", default-features = false, features = ["ink-as-dependency"] }
 light-client = { path = "../../light-client", default-features = false }
@@ -49,7 +49,7 @@ std = [
     "pink-extension/std",
     "utils/std",
     "tispark-primitives/std",
-    "commit-reveal-pallet/std",
+    "pallet-commit-reveal/std",
     "crypto/std",
     "aleph-consensus-client/std",
     "light-client/std",

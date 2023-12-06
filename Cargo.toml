@@ -5,7 +5,7 @@ members = [
     "crypto",
     "primitives",
     "light-client",
-    "commit-reveal-pallet",
+    "pallet-commit-reveal",
     "contracts/aleph-consensus-client",
     "contracts/tispark-client",
     "contracts/tispark-manager",
