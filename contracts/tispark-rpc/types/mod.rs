@@ -86,8 +86,16 @@ pub struct Digest<'a> {
 }
 
 #[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
-#[serde(bound(deserialize = "Vec<&'a str>: Deserialize<'de>"))]
 pub struct ReadProof<'a> {
+    pub jsonrpc: &'a str,
+    #[serde(borrow)]
+    pub result: ReadProofAtFinalizedBlock<'a>,
+    pub id: u32,
+}
+
+#[derive(Deserialize, Encode, Clone, Debug, PartialEq)]
+#[serde(bound(deserialize = "Vec<&'a str>: Deserialize<'de>"))]
+pub struct ReadProofAtFinalizedBlock<'a> {
     pub at: &'a str,
     #[serde(borrow)]
     pub proof: Vec<&'a str>,

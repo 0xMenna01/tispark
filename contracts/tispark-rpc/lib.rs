@@ -67,6 +67,7 @@ mod tispark_rpc {
             let consensus_handler = ConsensusHandler::new(endpoint);
             // Last finalized block
             let finalized_block = consensus_handler.get_finalized_head()?;
+            pink::ext().log(1, "Ok");
             // Consensus state and justifications
             let (consensus_state, justifications) =
                 consensus_handler.get_consensus_proof(&finalized_block)?;
@@ -76,8 +77,10 @@ mod tispark_rpc {
             // Storage read proof
             let storage_proof = state_handler.get_read_proof(&storage_key, &finalized_block)?;
             // Untrasted authorities that eventually finalized the block
+            pink::ext().log(1, "Getting authorities..");
             let untrusted_authorities =
                 state_handler.get_untrusted_authorities(&finalized_block)?;
+            pink::ext().log(1, "Ok");
 
             let consensus_proof = ConsensusProofParams {
                 untrusted_authorities,

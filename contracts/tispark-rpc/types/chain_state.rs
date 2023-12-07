@@ -50,8 +50,8 @@ impl<'a> ChainStateHandler<'a> {
             storage_key, finalized_head
         )
         .into_bytes();
-        let resp_body = Utils::call_rpc(&self.url, data)?;
 
+        let resp_body = Utils::call_rpc(&self.url, data)?;
         let (response_proof, _): (ReadProof, usize) =
             serde_json_core::from_slice(&resp_body).or(Err(Error::InvalidBody))?;
 
@@ -59,7 +59,7 @@ impl<'a> ChainStateHandler<'a> {
         let keys = vec![secure_storage_key.to_vec()];
         // construct the proof
         let mut proof = Vec::new();
-        for hex_str in response_proof.proof.into_iter() {
+        for hex_str in response_proof.result.proof.into_iter() {
             let trie_node_hash = Utils::extract_hex_from(2, hex_str)?;
             let trie_node_hash =
                 Vec::from_hex(trie_node_hash).map_err(|_| Error::InvalidHexData)?;

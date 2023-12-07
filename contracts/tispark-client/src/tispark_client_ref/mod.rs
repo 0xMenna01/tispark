@@ -128,6 +128,7 @@ impl TisparkContractRef {
         let res: ContractResult<ContractCommitment> = self.contract.query(exec);
 
         res.map_or(Err(Error::CommitmentError), |contract_commitment| {
+            pink_extension::ext().log(1, "Commitment ok..");
             Ok(CommitmentPlainResponse {
                 signature: contract_commitment.signature,
                 commit: contract_commitment
