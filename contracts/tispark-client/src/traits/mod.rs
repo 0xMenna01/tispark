@@ -1,5 +1,5 @@
 use crate::{
-    message::{CommitIdRequest, RevealResponse},
+    message::{RevealCommitmentRequest, RevealResponse},
     types::{commitment::ContractCommitment, message::CommitmentRequest, Result as ContractResult},
 };
 
@@ -13,5 +13,5 @@ pub trait CommitRevealContractManager {
     fn commit(&self, request: CommitmentRequest) -> ContractResult<ContractCommitment>;
 
     #[ink(message)]
-    fn reveal(&self, request: CommitIdRequest) -> ContractResult<RevealResponse>;
+    fn reveal(&self, request: RevealCommitmentRequest) -> ContractResult<RevealResponse>;
 }

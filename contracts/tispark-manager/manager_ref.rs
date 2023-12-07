@@ -1,5 +1,8 @@
 use ink::env::call::{ExecutionInput, Selector};
-use tispark_client::{ServiceId, tispark_client_ref::{TisparkContractRef, TiSparkBuilder}};
+use tispark_client::{
+    tispark_client_ref::{TiSparkBuilder, TisparkContractRef},
+    ServiceId,
+};
 use utils::{types::ContractId, ContractRef};
 
 #[derive(Debug)]

@@ -21,7 +21,7 @@ mod tispark_client {
         types::{
             commitment::{ContractCommitment, ContractCommitmentBuilder},
             message::{
-                CommitIdRequest, CommitmentRequest, ContractPubKey, ContractSecretKey,
+                CommitmentRequest, ContractPubKey, ContractSecretKey, RevealCommitmentRequest,
                 RevealResponse,
             },
             ContractError, ContractResult, VersionNumber, Versioned,
@@ -146,7 +146,7 @@ mod tispark_client {
         }
 
         #[ink(message)]
-        pub fn get_pub_key(&self) -> Vec<u8> {
+        pub fn pubkey(&self) -> Vec<u8> {
             self.signing_material().pub_key
         }
 
@@ -158,11 +158,27 @@ mod tispark_client {
         ) -> ContractResult<()> {
             self.ensure_owner()?;
 
-            if self.ensure_service_exists(service).is_err() {
+            if self.ensure_service_exists(&service).is_err() {
                 self.services.insert(service, &contract);
                 Ok(())
             } else {
-                Err(ContractError::GameAlreadyExists)
+                Err(ContractError::ServiceAlreadyExists)
+            }
+        }
+
+        #[ink(message)]
+        pub fn re_assign_service(
+            &mut self,
+            service: ServiceId,
+            contract: ContractServiceId,
+        ) -> ContractResult<()> {
+            self.ensure_owner()?;
+
+            if self.ensure_service_exists(&service).is_ok() {
+                self.services.insert(service, &contract);
+                Ok(())
+            } else {
+                Err(ContractError::InvalidService)
             }
         }
 
@@ -173,7 +189,7 @@ mod tispark_client {
                 .map_err(|_| ContractError::BadOrigin)
         }
 
-        fn ensure_service_contract(&self, service: ServiceId) -> ContractResult<()> {
+        fn ensure_service_contract(&self, service: &ServiceId) -> ContractResult<()> {
             let contract = self.ensure_service_exists(service)?;
 
             AccessControl::new(Some(contract))
@@ -182,11 +198,11 @@ mod tispark_client {
                 .map_err(|_| ContractError::BadOrigin)
         }
 
-        fn ensure_service_exists(&self, service: ServiceId) -> ContractResult<ContractServiceId> {
+        fn ensure_service_exists(&self, service: &ServiceId) -> ContractResult<ContractServiceId> {
             if let Some(id) = self.services.get(service) {
                 Ok(id)
             } else {
-                Err(ContractError::InvalidGame)
+                Err(ContractError::InvalidService)
             }
         }
     }
@@ -255,7 +271,9 @@ mod tispark_client {
         }
 
         #[ink(message)]
-        fn reveal(&self, request: CommitIdRequest) -> ContractResult<RevealResponse> {
+        fn reveal(&self, request: RevealCommitmentRequest) -> ContractResult<RevealResponse> {
+            self.ensure_service_contract(&request.service_id)?;
+
             let commit_id = H256::from(request);
             let rpc_request = self
                 .rpc

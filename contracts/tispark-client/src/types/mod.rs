@@ -20,7 +20,6 @@ pub type ServiceId = u32;
 #[derive(Debug, PartialEq, Eq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum ContractError {
-    DecodeBetResultError,
     DecodeCommitRequestForResultError,
     StateVerificationError,
     PermissionDeniedError,
@@ -40,8 +39,8 @@ pub enum ContractError {
     CommitmentStateInvalidMetadata,
     InvalidInputFormat,
     UntrustedAuthoritiesError,
-    GameAlreadyExists,
-    InvalidGame,
+    ServiceAlreadyExists,
+    InvalidService,
     InvalidConsensusProof,
     InvalidHex,
     InvalidHash,

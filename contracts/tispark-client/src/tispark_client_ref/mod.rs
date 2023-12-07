@@ -1,7 +1,7 @@
 use self::input::SensitiveData;
 use crate::{
     commitment::ContractCommitment,
-    message::{CommitIdRequest, CommitmentRequest, ContractSignature, RevealResponse},
+    message::{CommitmentRequest, ContractSignature, RevealCommitmentRequest, RevealResponse},
     ContractResult, ServiceId,
 };
 use alloc::vec::Vec;
@@ -142,7 +142,7 @@ impl TisparkContractRef {
         &self,
         commit_id: Hash,
     ) -> Result<RevealPlainResponse<Value>, Error> {
-        let request = CommitIdRequest::new(commit_id);
+        let request = RevealCommitmentRequest::new(commit_id, self.service);
 
         let exec = ExecutionInput::new(Selector::new(ink::selector_bytes!(
             "CommitRevealContractManager::reveal"
@@ -152,11 +152,10 @@ impl TisparkContractRef {
         let res: ContractResult<RevealResponse> = self.contract.query(exec);
 
         res.map_or(Err(Error::RevealError), |reveal_response| {
-            pink_extension::ext().log(1, "Reveal ok..");
             let encoded_res = reveal_response.result();
-            let result =
+            let result: Value =
                 Decode::decode(&mut &encoded_res[..]).map_err(|_| Error::DecodingMetadataError)?;
-            pink_extension::ext().log(1, "Ok decode..");
+
             Ok(RevealPlainResponse {
                 result,
                 proof: reveal_response.proof(),

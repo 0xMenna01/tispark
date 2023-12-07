@@ -7,17 +7,20 @@ use utils::types::Hash;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-pub struct CommitIdRequest(Hash);
+pub struct RevealCommitmentRequest {
+    pub commit: Hash,
+    pub service_id: ServiceId,
+}
 
-impl CommitIdRequest {
-    pub fn new(hash: Hash) -> Self {
-        CommitIdRequest(hash)
+impl RevealCommitmentRequest {
+    pub fn new(commit: Hash, service_id: ServiceId) -> Self {
+        RevealCommitmentRequest { commit, service_id }
     }
 }
 
-impl From<CommitIdRequest> for H256 {
-    fn from(request: CommitIdRequest) -> Self {
-        H256::from_slice(request.0.as_ref())
+impl From<RevealCommitmentRequest> for H256 {
+    fn from(request: RevealCommitmentRequest) -> Self {
+        H256::from_slice(request.commit.as_ref())
     }
 }
 
@@ -41,8 +44,8 @@ impl CommitmentRequest {
         }
     }
 
-    pub fn get_service(&self) -> ServiceId {
-        self.service.clone()
+    pub fn get_service(&self) -> &ServiceId {
+        &self.service
     }
 
     pub fn get(&self) -> (Vec<u8>, Vec<u8>) {
@@ -54,7 +57,7 @@ impl CommitmentRequest {
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub struct RevealResponse {
-    /// The encoded result with the associated metadata
+    /// The encoded result
     result: Vec<u8>,
     /// bet commitment proof
     proof: RevealProof,
