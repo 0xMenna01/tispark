@@ -128,7 +128,6 @@ impl TisparkContractRef {
         let res: ContractResult<ContractCommitment> = self.contract.query(exec);
 
         res.map_or(Err(Error::CommitmentError), |contract_commitment| {
-            pink_extension::ext().log(1, "Commitment ok..");
             Ok(CommitmentPlainResponse {
                 signature: contract_commitment.signature,
                 commit: contract_commitment
@@ -153,10 +152,11 @@ impl TisparkContractRef {
         let res: ContractResult<RevealResponse> = self.contract.query(exec);
 
         res.map_or(Err(Error::RevealError), |reveal_response| {
+            pink_extension::ext().log(1, "Reveal ok..");
             let encoded_res = reveal_response.result();
             let result =
                 Decode::decode(&mut &encoded_res[..]).map_err(|_| Error::DecodingMetadataError)?;
-
+            pink_extension::ext().log(1, "Ok decode..");
             Ok(RevealPlainResponse {
                 result,
                 proof: reveal_response.proof(),

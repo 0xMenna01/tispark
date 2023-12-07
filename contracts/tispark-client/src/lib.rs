@@ -36,7 +36,10 @@ mod tispark_client {
     use tispark_primitives::commit_reveal::{CommitRevealManager, DecryptedData, QueryMetadata};
     use tispark_rpc::TiSparkRpcRef;
     use utils::{
-        types::{AccessControl, AuthorityId, ContractId, Hash as CodeHash, SudoAccount, CryptoHasher, Random},
+        types::{
+            AccessControl, AuthorityId, ContractId, CryptoHasher, Hash as CodeHash, Random,
+            SudoAccount,
+        },
         ContractRef as ConsensusClientRef,
     };
 
@@ -229,11 +232,16 @@ mod tispark_client {
             );
 
             // Retrieve the commitment
-            let commitment = CommitRevealManager::setup(&commitment_key.key, query, CryptoHasher::hash, Random::getrandom)
-                .map_err(|_| ContractError::CommitmentKeyDerivationError)?
-                .inject(encoded_result)
-                .commit()
-                .map_err(|_| ContractError::CommitmentEncryptionError)?;
+            let commitment = CommitRevealManager::setup(
+                &commitment_key.key,
+                query,
+                CryptoHasher::hash,
+                Random::getrandom,
+            )
+            .map_err(|_| ContractError::CommitmentKeyDerivationError)?
+            .inject(encoded_result)
+            .commit()
+            .map_err(|_| ContractError::CommitmentEncryptionError)?;
 
             // Build a commitment signed with the contract signing material
             let secret = self.signing_material().secret_key;
