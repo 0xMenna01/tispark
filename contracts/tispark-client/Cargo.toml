@@ -9,8 +9,8 @@ edition = "2021"
 ink = { version = "4", default-features = false }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
-sp-io = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false, features = ["disable_allocator"] }
-frame-support = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false, features = ["disable_allocator"] }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 hex = { version = "0.4", default-features = false }
 

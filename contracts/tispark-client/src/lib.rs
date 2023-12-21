@@ -114,7 +114,7 @@ mod tispark_client {
             // It can be removed at later stages for a permissionless setting
             let sudo = Self::env().caller();
             let sudo = SudoAccount::new(Some(sudo));
-
+            
             let services = Mapping::new();
             // Rpc contract instantiation
             let rpc = TiSparkRpcRef::new()

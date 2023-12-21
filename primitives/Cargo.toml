@@ -8,11 +8,11 @@ description = "Primitives for commit-reveal scheme"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
-sp-application-crypto = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
-sp-core = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
-sp-runtime = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
-sp-std = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
-sp-trie = { git = "https://github.com/Cardinal-Cryptography/substrate.git", branch = "aleph-v0.9.42", default-features = false }
+sp-application-crypto = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
+sp-trie = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
 log = { version = "0.4.17", default-features = false }
 
 ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
