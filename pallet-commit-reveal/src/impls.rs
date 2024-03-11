@@ -42,15 +42,15 @@ impl<T: Config> TiSparkManager for Pallet<T> {
         Ok(())
     }
 
-    fn reveal_from_proof(proof: RevealProof) -> Result<(), Self::Error> {
+    fn reveal_from_proof(proof: RevealProof) -> Result<Vec<u8>, Self::Error> {
         let reveal = Self::reveal(proof.clone()).map_err(|_| Error::<T>::InvalidProof)?;
         Self::deposit_event(Event::CommitRevealed {
             proof: proof.secret,
-            reveal,
+            reveal: reveal.clone(),
             commit: proof.commit_id,
         });
 
-        Ok(())
+        Ok(reveal)
     }
 
     fn commitment_storage_key_for(id: &CommitId) -> Vec<u8> {

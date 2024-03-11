@@ -17,7 +17,7 @@ pub trait TiSparkManager {
     ) -> Result<(), Self::Error>;
 
     /// Key reveal proof
-    fn reveal_from_proof(proof: RevealProof) -> Result<(), Self::Error>;
+    fn reveal_from_proof(proof: RevealProof) -> Result<Vec<u8>, Self::Error>;
 
     fn commitment_storage_key_for(id: &CommitId) -> Vec<u8>;
 
