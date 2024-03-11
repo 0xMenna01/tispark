@@ -55,6 +55,17 @@ impl Commit<Vec<u8>> {
 }
 
 impl<Metadata: Clone> Commit<Metadata> {
+    pub fn new(
+        id: CommitId,
+        commitment: (EncryptedData, Vec<u8>),
+        metadata: Metadata,
+    ) -> Commit<Metadata> {
+        Commit {
+            id,
+            data: (commitment.0, metadata),
+            iv: commitment.1,
+        }
+    }
     pub fn get_id(&self) -> CommitId {
         self.id.clone()
     }
