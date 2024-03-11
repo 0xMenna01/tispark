@@ -10,7 +10,7 @@ use types::TiSparkManager;
 pub mod pallet {
     use super::*;
 
-    use crate::types::{CommitmentRequest, PhatContractOf};
+    pub use crate::types::{CommitmentRequest, PhatContractOf};
     use frame_system::pallet_prelude::*;
     use primitives::commit_reveal::CommitId;
     use sp_application_crypto::RuntimeAppPublic;
@@ -125,7 +125,7 @@ pub mod pallet {
         #[pallet::weight(Weight::from_parts(500_00, 0) + T::DbWeight::get().reads_writes(1, 1))]
         pub fn send_proof(origin: OriginFor<T>, proof: RevealProof) -> DispatchResult {
             ensure_signed(origin)?;
-            
+
             Ok(Self::reveal_from_proof(proof)?)
         }
 
