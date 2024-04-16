@@ -26,9 +26,17 @@ pub trait Commitment<C: Encode, Metadata> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
+struct DataToCommit<T> {
+    /// The metadata that identified the data
+    metadata: T,
+    /// The actual committed specific data
+    data: EncryptedData,
+}
+
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
 pub struct Commit<Metadata> {
     id: CommitId,
-    data: (EncryptedData, Metadata),
+    data: DataToCommit<Metadata>,
     iv: Vec<u8>,
 }
 
@@ -36,7 +44,10 @@ impl<Metadata: Encode> Commit<Metadata> {
     pub fn with_encoded_metadata(self) -> Commit<Vec<u8>> {
         Commit {
             id: self.id,
-            data: (self.data.0, self.data.1.encode()),
+            data: DataToCommit {
+                metadata: self.data.metadata.encode(),
+                data: self.data.data,
+            },
             iv: self.iv,
         }
     }
@@ -44,11 +55,14 @@ impl<Metadata: Encode> Commit<Metadata> {
 
 impl Commit<Vec<u8>> {
     pub fn decode<Metadata: Decode>(self) -> Result<Commit<Metadata>, Error> {
-        let encoded_meta = self.data.1;
-        let meta = Decode::decode(&mut &encoded_meta[..])?;
+        let encoded_meta = self.data.metadata;
+        let metadata = Decode::decode(&mut &encoded_meta[..])?;
         Ok(Commit {
             id: self.id,
-            data: (self.data.0, meta),
+            data: DataToCommit {
+                metadata,
+                data: self.data.data,
+            },
             iv: self.iv,
         })
     }
@@ -57,25 +71,27 @@ impl Commit<Vec<u8>> {
 impl<Metadata: Clone> Commit<Metadata> {
     pub fn new(
         id: CommitId,
-        commitment: (EncryptedData, Vec<u8>),
+        data: EncryptedData,
+        iv: Vec<u8>,
         metadata: Metadata,
     ) -> Commit<Metadata> {
         Commit {
             id,
-            data: (commitment.0, metadata),
-            iv: commitment.1,
+            data: DataToCommit { metadata, data },
+            iv,
         }
     }
+
     pub fn get_id(&self) -> CommitId {
         self.id.clone()
     }
 
     pub fn get_commitment(&self) -> (EncryptedData, Vec<u8>) {
-        (self.data.0.clone(), self.iv.clone())
+        (self.data.data.clone(), self.iv.clone())
     }
 
     pub fn get_metadata(&self) -> Metadata {
-        self.data.1.clone()
+        self.data.metadata.clone()
     }
 }
 
@@ -246,7 +262,10 @@ impl<CommitMetadata> CommitRevealManager<SchemeReady<Vec<u8>, CommitMetadata>> {
 
         Ok(Commit {
             id: self.state.setup_material.commit_id,
-            data: (data, self.state.setup_material.meta),
+            data: DataToCommit {
+                metadata: self.state.setup_material.meta,
+                data,
+            },
             iv: iv.to_vec(),
         })
     }
@@ -325,7 +344,7 @@ mod test {
 
         let reveal = CommitRevealManager::reveal(&secret, commit.id).unwrap();
 
-        let decrypted = DecryptedData::new(reveal.secret, commit.iv, commit.data.0)
+        let decrypted = DecryptedData::new(reveal.secret, commit.iv, commit.data.data)
             .decrypt()
             .unwrap();
 

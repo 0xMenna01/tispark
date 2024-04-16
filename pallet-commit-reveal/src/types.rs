@@ -40,6 +40,7 @@ pub type PhatContractOf<T> = <T as Config>::PhatContractId;
 #[scale_info(skip_type_params(MaxCommitmentSize))]
 pub struct SecureCommitment<MaxCommitmentSize: Get<u32>, Metadata> {
     commit: BoundedVec<u8, MaxCommitmentSize>,
+    
     metadata: Metadata,
 }
 

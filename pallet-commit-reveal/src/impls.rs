@@ -29,7 +29,7 @@ impl<T: Config> TiSparkManager for Pallet<T> {
 
         let commit_id = commitment.get_id();
         // We cannot commit the plain metadata because the phat contract that must decode it cannot use generics type yet (not supported in ink smart contracts yet)
-        // todo! Once generic types are supported change the implementation and commit the plain metadata
+        // todo! Once generic types are supported in ink change the implementation and commit the plain metadata
         Self::commit(commitment).map_err(|_| Error::<T>::InvalidCommitment)?;
 
         let storage_key = Self::commitment_storage_key_for(&commit_id);
