@@ -67,7 +67,6 @@ mod tispark_rpc {
             let consensus_handler = ConsensusHandler::new(endpoint);
             // Last finalized block
             let finalized_block = consensus_handler.get_finalized_head()?;
-            pink::ext().log(1, "Ok");
             // Consensus state and justifications
             let (consensus_state, justifications) =
                 consensus_handler.get_consensus_proof(&finalized_block)?;

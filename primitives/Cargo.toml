@@ -15,8 +15,10 @@ sp-std = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "rel
 sp-trie = { git = "https://github.com/paritytech/polkadot-sdk.git", branch = "release-polkadot-v1.2.0", default-features = false }
 log = { version = "0.4.17", default-features = false }
 
-ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
 crypto = { path = "../crypto", default-features = false }
+
+[dev-dependencies]
+ring = { version = "0.16.20", default-features = false, features = ["alloc"] }
 
 [features]
 default = [ "std" ]
