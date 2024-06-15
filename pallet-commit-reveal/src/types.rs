@@ -21,7 +21,8 @@ pub trait TiSparkManager {
 
     fn commitment_storage_key_for(id: &CommitId) -> Vec<u8>;
 
-    fn metadata_for_commit(commit_id: &CommitId) -> Result<Self::Metadata, Self::Error>;
+    fn metadata_for_commit<Metadata: Decode>(commit_id: &CommitId)
+        -> Result<Metadata, Self::Error>;
 }
 
 pub type EncodedMetadata<MaxMetaLen> = BoundedVec<u8, MaxMetaLen>;
@@ -40,7 +41,7 @@ pub type PhatContractOf<T> = <T as Config>::PhatContractId;
 #[scale_info(skip_type_params(MaxCommitmentSize))]
 pub struct SecureCommitment<MaxCommitmentSize: Get<u32>, Metadata> {
     commit: BoundedVec<u8, MaxCommitmentSize>,
-    
+
     metadata: Metadata,
 }
 

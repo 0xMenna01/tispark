@@ -49,8 +49,6 @@ pub mod pallet {
         /// The length of the initialization vector
         #[pallet::constant]
         type IVLen: Get<u32>;
-
-        type CommitMetadata: Parameter + MaxEncodedLen;
     }
 
     #[pallet::event]
@@ -59,7 +57,7 @@ pub mod pallet {
         /// A bet has been commited
         ValueCommitted {
             id: CommitId,
-            metadata: T::CommitMetadata,
+            metadata: Vec<u8>,
             storage_key: Vec<u8>,
         },
         /// A commitment proof has been provided
@@ -109,12 +107,12 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         #[pallet::call_index(0)]
         #[pallet::weight(Weight::from_parts(100_000, 0) + T::DbWeight::get().reads_writes(2, 1))]
-        pub fn send_commitment(
+        pub fn force_send_commitment(
             origin: OriginFor<T>,
-            commit: Commit<T::CommitMetadata>,
+            commit: Commit<Vec<u8>>,
             signature: <T::PhatContractId as RuntimeAppPublic>::Signature,
         ) -> DispatchResult {
-            ensure_signed(origin)?;
+            ensure_root(origin)?;
             // construct commitment request
             let request = CommitmentRequest { commit, signature };
 
@@ -123,8 +121,8 @@ pub mod pallet {
 
         #[pallet::call_index(1)]
         #[pallet::weight(Weight::from_parts(500_00, 0) + T::DbWeight::get().reads_writes(1, 1))]
-        pub fn send_proof(origin: OriginFor<T>, proof: RevealProof) -> DispatchResult {
-            ensure_signed(origin)?;
+        pub fn force_send_proof(origin: OriginFor<T>, proof: RevealProof) -> DispatchResult {
+            ensure_root(origin)?;
             Self::reveal_from_proof(proof)?;
             Ok(())
         }

@@ -13,29 +13,26 @@ use sp_core::Get;
 use sp_std::vec::Vec;
 
 impl<T: Config> TiSparkManager for Pallet<T> {
-    type Metadata = T::CommitMetadata;
+    type Metadata = Vec<u8>;
     type Signature = <T::PhatContractId as RuntimeAppPublic>::Signature;
     type Error = Error<T>;
 
     fn commit_from_request(
         request: CommitmentRequest<Self::Metadata, Self::Signature>,
     ) -> Result<(), Self::Error> {
-        let plain_metadata = request.commit.get_metadata();
-
-        // We take the commitment with the encoded metadata, since the phat contract has signed that information
-        let commitment = request.commit.with_encoded_metadata();
-
-        verify_contract_signature::<T>(&commitment, &request.signature)?;
+        // Commitment with the encoded metadata, that has been signed by the phat contract
+        let commitment = request.commit;
 
         let commit_id = commitment.get_id();
-        // We cannot commit the plain metadata because the phat contract that must decode it cannot use generics type yet (not supported in ink smart contracts yet)
-        // todo! Once generic types are supported in ink change the implementation and commit the plain metadata
-        Self::commit(commitment).map_err(|_| Error::<T>::InvalidCommitment)?;
+        Self::commit(commitment.clone()).map_err(|_| Error::<T>::InvalidCommitment)?;
 
         let storage_key = Self::commitment_storage_key_for(&commit_id);
+        // We do this at last because it's the most computational intensive operation
+        verify_contract_signature::<T>(&commitment, &request.signature)?;
+
         Self::deposit_event(Event::ValueCommitted {
             id: commit_id,
-            metadata: plain_metadata,
+            metadata: commitment.get_metadata(),
             storage_key,
         });
 
@@ -57,11 +54,13 @@ impl<T: Config> TiSparkManager for Pallet<T> {
         PhatContractCommitment::<T>::hashed_key_for(id)
     }
 
-    fn metadata_for_commit(commit_id: &CommitId) -> Result<Self::Metadata, Self::Error> {
+    fn metadata_for_commit<Metadata: Decode>(
+        commit_id: &CommitId,
+    ) -> Result<Metadata, Self::Error> {
         if let Some(commitment) = PhatContractCommitment::<T>::get(commit_id) {
             let metadata = commitment.get_metadata();
 
-            let metadata: T::CommitMetadata = Decode::decode(&mut &metadata[..])
+            let metadata: Metadata = Decode::decode(&mut &metadata[..])
                 .map_err(|_| Error::<T>::DecodingMetadataError)?;
             Ok(metadata)
         } else {
