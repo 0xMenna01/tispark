@@ -12,7 +12,6 @@ pub enum FinalityError {
     PermissionDenied,
     SudoAlreadyRemoved,
     InvalidProof,
-    AuthoritiesAlreadyInitialized,
     VerificationError,
 }
 
@@ -25,9 +24,9 @@ pub trait FinalityGadget {
         next_authorities: Vec<AuthorityId>,
     ) -> Result<(), FinalityError>;
 
-    /// Initialize a permissioned set of authorities for the consensus client
+    /// Set a permissioned set of authorities for the consensus client
     #[ink(message)]
-    fn initialize_permissioned_authorities(
+    fn set_permissioned_authorities(
         &mut self,
         authorities: Vec<AuthorityId>,
     ) -> Result<(), FinalityError>;
@@ -51,7 +50,7 @@ pub trait FinalityGadget {
     #[ink(message)]
     fn current_session(&self) -> Option<SessionIndex>;
 
-    /// Returns the current session, if necessary.
+    /// Returns the current authorities.
     #[ink(message)]
     fn authorities(&self) -> Option<Vec<AccountId>>;
 

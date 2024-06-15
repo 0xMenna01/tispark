@@ -82,22 +82,16 @@ mod alpeh_consensus_client {
             Ok(())
         }
 
-        /// Initialize a permissioned set of authorities for the consensus client
+        /// Set a permissioned set of authorities for the consensus client
         #[ink(message)]
-        fn initialize_permissioned_authorities(
+        fn set_permissioned_authorities(
             &mut self,
             authorities: Vec<AuthorityId>,
         ) -> Result<(), FinalityError> {
             self.ensure_owner()
                 .map_err(|_| FinalityError::PermissionDenied)?;
-
-            let mut auth = authorities;
-            if self.consensus_auth.authorities.is_empty() {
-                self.consensus_auth.authorities.append(&mut auth);
-                Ok(())
-            } else {
-                Err(FinalityError::AuthoritiesAlreadyInitialized)
-            }
+            self.consensus_auth.authorities = authorities;
+            Ok(())
         }
 
         /// Updates the list of authorities based on next authorities already stored and stores the new next authorities within a proof.

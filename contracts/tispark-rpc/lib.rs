@@ -31,11 +31,10 @@ mod tispark_rpc {
     impl TiSparkRpc {
         /// Constructor to initializes your contract
         #[ink(constructor)]
-        pub fn new() -> Self {
+        pub fn new(http_endpoint: String) -> Self {
             let admin = pink::env().caller();
             let admin = SudoAccount::new(Some(admin));
 
-            let http_endpoint = String::from("https://devnet-rpc-1.icebergnodes.io/");
             Self {
                 admin,
                 rpc_node: http_endpoint,

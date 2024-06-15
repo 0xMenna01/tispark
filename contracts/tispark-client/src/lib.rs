@@ -28,7 +28,7 @@ mod tispark_client {
         },
         ContractServiceId, ServiceId,
     };
-    use alloc::vec::Vec;
+    use alloc::{string::String, vec::Vec};
     use ink::storage::{Lazy, Mapping};
     use light_client::Hash as H256;
     use pink::PinkEnvironment;
@@ -92,7 +92,11 @@ mod tispark_client {
 
     impl TiSparkClient {
         #[ink(constructor)]
-        pub fn new(consensus_client_id: ContractId, rpc_contract_code_hash: CodeHash) -> Self {
+        pub fn new(
+            consensus_client_id: ContractId,
+            rpc_contract_code_hash: CodeHash,
+            http_endpoint: String,
+        ) -> Self {
             // contract keyring material to sign and verify messages.
             let (version, secret_key, pub_key) =
                 KeyringVersion::build_keyring_material(Versioned::Signing);
@@ -114,10 +118,10 @@ mod tispark_client {
             // It can be removed at later stages for a permissionless setting
             let sudo = Self::env().caller();
             let sudo = SudoAccount::new(Some(sudo));
-            
+
             let services = Mapping::new();
             // Rpc contract instantiation
-            let rpc = TiSparkRpcRef::new()
+            let rpc = TiSparkRpcRef::new(http_endpoint)
                 .code_hash(rpc_contract_code_hash)
                 .endowment(0)
                 .salt_bytes([&pub_key[..], &sudo.to_vec()[..]].concat())
@@ -148,6 +152,11 @@ mod tispark_client {
         #[ink(message)]
         pub fn pubkey(&self) -> Vec<u8> {
             self.signing_material().pub_key
+        }
+
+        #[ink(message)]
+        pub fn contract_service(&self, id: ServiceId) -> Option<ContractServiceId> {
+            self.services.get(id)
         }
 
         #[ink(message)]
