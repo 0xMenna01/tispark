@@ -11,4 +11,6 @@ This protocol finds utility in various privacy-focused applications.
 
 The project is still not meant to be deployed in production. The development is still ongoing.
 As a PoC, the cryptographic primitives are not yet committing, we simply used AES-GCM, howewer it requires committing schemes. 
-You may follow this for a committing AEAD scheme: https://samuellucas.com/draft-lucas-generalised-committing-aead/draft-lucas-generalised-committing-aead.html
+
+You may follow this for a committing AEAD scheme:
+https://samuellucas.com/draft-lucas-generalised-committing-aead/draft-lucas-generalised-committing-aead.html
